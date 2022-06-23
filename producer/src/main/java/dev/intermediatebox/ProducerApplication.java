@@ -2,6 +2,7 @@ package dev.intermediatebox;
 
 import dev.intermediatebox.entity.*;
 import dev.intermediatebox.producer.*;
+import dev.intermediatebox.service.ImageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -31,11 +32,17 @@ public class ProducerApplication implements CommandLineRunner {
 //  @Autowired
 //  private PaymentRequestProducer paymentRequestProducer;
 
-  @Autowired
-  private FoodOrderProducer foodOrderProducer;
+//  @Autowired
+//  private FoodOrderProducer foodOrderProducer;
+//
+//  @Autowired
+//  private SimpleNumberProducer simpleNumberProducer;
 
   @Autowired
-  private SimpleNumberProducer simpleNumberProducer;
+  private ImageService imageService;
+
+  @Autowired
+  private ImageProducer imageProducer;
 
   public static void main(String[] args) {
     SpringApplication.run(ProducerApplication.class, args);
@@ -89,18 +96,33 @@ public class ProducerApplication implements CommandLineRunner {
 //    paymentRequestProducer.send(pr1_transaction2);
 //    paymentRequestProducer.send(pr2_transaction3);
 
-    // 12. & 13.
-    var fo1 = new FoodOrder(2, "bread");
-    var fo2 = new FoodOrder(1, "cheese");
-    var fo3 = new FoodOrder(5, "water");
+//    // 12. & 13.
+//    var fo1 = new FoodOrder(2, "bread");
+//    var fo2 = new FoodOrder(1, "cheese");
+//    var fo3 = new FoodOrder(5, "water");
+//
+//    foodOrderProducer.send(fo1);
+//    foodOrderProducer.send(fo2);
+//    foodOrderProducer.send(fo3);
+//
+//    for (int i = 100; i < 103; i++) {
+//      var simpleNumber = new SimpleNumber(i);
+//      simpleNumberProducer.send(simpleNumber);
+//    }
 
-    foodOrderProducer.send(fo1);
-    foodOrderProducer.send(fo2);
-    foodOrderProducer.send(fo3);
+    // 14.
+    var image1 = imageService.generateImage("jpg");
+    var image2 = imageService.generateImage("svg");
+    var image3 = imageService.generateImage("png");
+    var image4 = imageService.generateImage("gif");
+    var image5 = imageService.generateImage("bmp");
+    var image6 = imageService.generateImage("tiff");
 
-    for (int i = 100; i < 103; i++) {
-      var simpleNumber = new SimpleNumber(i);
-      simpleNumberProducer.send(simpleNumber);
-    }
+    imageProducer.send(image1, 0);
+    imageProducer.send(image2, 0);
+    imageProducer.send(image3, 0);
+    imageProducer.send(image4, 1);
+    imageProducer.send(image5, 1);
+    imageProducer.send(image6, 1);
   }
 }

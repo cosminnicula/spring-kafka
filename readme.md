@@ -62,3 +62,7 @@ kafka-topics --create --topic=t-food-order --partitions=1 --replication-factor=1
 
 13.SimpleNumberProducer & SimpleNumberConsumer, ConsumerCustomConfig (Global error handler)
 kafka-topics --create --topic=t-simple-number --partitions=1 --replication-factor=1 --bootstrap-server=localhost:9092
+
+14.ImageProducer & ImageConsumer (blocking retrying consumer -> the consumer keeps retrying and further messages are not processed on a particular topic until success or retry failure -> can cause bottleneck -> create a retry policy not too short and not too long)
+kafka-topics --create --topic=t-image --partitions=2 --replication-factor=1 --bootstrap-server=localhost:9092
+kafka-topics --describe --topic=t-image --bootstrap-server=localhost:9092

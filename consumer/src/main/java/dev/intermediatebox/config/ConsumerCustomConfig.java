@@ -14,7 +14,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.adapter.RecordFilterStrategy;
+import org.springframework.util.backoff.FixedBackOff;
 
 @Configuration
 public class ConsumerCustomConfig {
@@ -58,6 +60,18 @@ public class ConsumerCustomConfig {
     configurer.configure(factory, consumerFactory());
 
     factory.setErrorHandler(new GlobalErrorHandler());
+
+    return factory;
+  }
+
+  @Bean(name="imageRetryContainerFactory")
+  public ConcurrentKafkaListenerContainerFactory<Object, Object> imageRetryContainerFactory(
+      ConcurrentKafkaListenerContainerFactoryConfigurer configurer
+  ) {
+    var factory = new ConcurrentKafkaListenerContainerFactory<>();
+    configurer.configure(factory, consumerFactory());
+
+    factory.setCommonErrorHandler(new DefaultErrorHandler(new FixedBackOff(10_000, 3)));
 
     return factory;
   }
