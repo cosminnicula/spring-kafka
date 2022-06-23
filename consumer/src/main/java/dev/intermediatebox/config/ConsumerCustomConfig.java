@@ -3,6 +3,7 @@ package dev.intermediatebox.config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.intermediatebox.entity.CarLocation;
+import dev.intermediatebox.error.handler.GlobalErrorHandler;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,4 +50,15 @@ public class ConsumerCustomConfig {
     return factory;
   }
 
+  @Bean(name="kafkaListenerContainerFactory")
+  public ConcurrentKafkaListenerContainerFactory<Object, Object> kafkaListenerContainerFactory(
+      ConcurrentKafkaListenerContainerFactoryConfigurer configurer
+  ) {
+    var factory = new ConcurrentKafkaListenerContainerFactory<>();
+    configurer.configure(factory, consumerFactory());
+
+    factory.setErrorHandler(new GlobalErrorHandler());
+
+    return factory;
+  }
 }

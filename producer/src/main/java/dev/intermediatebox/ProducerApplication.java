@@ -1,9 +1,6 @@
 package dev.intermediatebox;
 
-import dev.intermediatebox.entity.Employee;
-import dev.intermediatebox.entity.FoodOrder;
-import dev.intermediatebox.entity.PaymentRequest;
-import dev.intermediatebox.entity.PurchaseRequest;
+import dev.intermediatebox.entity.*;
 import dev.intermediatebox.producer.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -36,6 +33,9 @@ public class ProducerApplication implements CommandLineRunner {
 
   @Autowired
   private FoodOrderProducer foodOrderProducer;
+
+  @Autowired
+  private SimpleNumberProducer simpleNumberProducer;
 
   public static void main(String[] args) {
     SpringApplication.run(ProducerApplication.class, args);
@@ -89,7 +89,7 @@ public class ProducerApplication implements CommandLineRunner {
 //    paymentRequestProducer.send(pr1_transaction2);
 //    paymentRequestProducer.send(pr2_transaction3);
 
-    // 12.
+    // 12. & 13.
     var fo1 = new FoodOrder(2, "bread");
     var fo2 = new FoodOrder(1, "cheese");
     var fo3 = new FoodOrder(5, "water");
@@ -97,5 +97,10 @@ public class ProducerApplication implements CommandLineRunner {
     foodOrderProducer.send(fo1);
     foodOrderProducer.send(fo2);
     foodOrderProducer.send(fo3);
+
+    for (int i = 100; i < 103; i++) {
+      var simpleNumber = new SimpleNumber(i);
+      simpleNumberProducer.send(simpleNumber);
+    }
   }
 }

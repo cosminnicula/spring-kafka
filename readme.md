@@ -57,5 +57,8 @@ kafka-console-consumer --topic t-purchase-request --offset=earliest --partition=
 kafka-topics --create --topic=t-payment-request --partitions=1 --replication-factor=1 --bootstrap-server=localhost:9092
 kafka-console-consumer --topic t-payment-request --offset=earliest --partition=0 --bootstrap-server=localhost:9092
 
-12. FoodOrderProducer & FoodOrderConsumer, FoodOrderErrorHandler (KafkaListener error handler, Global error handler)
+12.FoodOrderProducer & FoodOrderConsumer, FoodOrderErrorHandler (KafkaListener error handler)
 kafka-topics --create --topic=t-food-order --partitions=1 --replication-factor=1 --bootstrap-server=localhost:9092
+
+13.SimpleNumberProducer & SimpleNumberConsumer, ConsumerCustomConfig (Global error handler)
+kafka-topics --create --topic=t-simple-number --partitions=1 --replication-factor=1 --bootstrap-server=localhost:9092
