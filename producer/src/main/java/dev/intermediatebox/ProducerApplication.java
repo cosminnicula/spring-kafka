@@ -1,9 +1,10 @@
 package dev.intermediatebox;
 
 import dev.intermediatebox.entity.Employee;
-import dev.intermediatebox.producer.EmployeeJsonProducer;
-import dev.intermediatebox.producer.HelloKafkaProducer;
-import dev.intermediatebox.producer.KafkaKeyProducer;
+import dev.intermediatebox.entity.FoodOrder;
+import dev.intermediatebox.entity.PaymentRequest;
+import dev.intermediatebox.entity.PurchaseRequest;
+import dev.intermediatebox.producer.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -22,10 +23,19 @@ public class ProducerApplication implements CommandLineRunner {
 //  private HelloKafkaProducer helloKafkaProducer;
 
 //  @Autowired
-//  KafkaKeyProducer kafkaKeyProducer;
+//  private KafkaKeyProducer kafkaKeyProducer;
 
 //  @Autowired
-//  EmployeeJsonProducer employeeJsonProducer;
+//  private EmployeeJsonProducer employeeJsonProducer;
+
+//  @Autowired
+//  private PurchaseRequestProducer purchaseRequestProducer;
+
+//  @Autowired
+//  private PaymentRequestProducer paymentRequestProducer;
+
+  @Autowired
+  private FoodOrderProducer foodOrderProducer;
 
   public static void main(String[] args) {
     SpringApplication.run(ProducerApplication.class, args);
@@ -48,5 +58,44 @@ public class ProducerApplication implements CommandLineRunner {
 //    for (int i = 0; i < 10; i++) {
 //      employeeJsonProducer.sendMessage(new Employee("employee-" + i, "Employee " + i, LocalDate.now()));
 //    }
+
+    //10.
+//    var pr1 = new PurchaseRequest(5551, "PR-1", 991, "USD");
+//    var pr2 = new PurchaseRequest(5552, "PR-2", 992, "USD");
+//    var pr3 = new PurchaseRequest(5553, "PR-3", 993, "USD");
+
+//    purchaseRequestProducer.send(pr1);
+//    purchaseRequestProducer.send(pr2);
+//    purchaseRequestProducer.send(pr3);
+//    // send pr1 again to simulate duplicate data
+//    purchaseRequestProducer.send(pr1);
+
+//    // 11.
+//    var pr1_transaction1 = new PaymentRequest("pr1", 551, "USD", "Notes pr1", "budget reserve");
+//    var pr1_transaction2 = new PaymentRequest("pr1", 551, "USD", "Notes pr1", "approval workflow");
+//    var pr1_transaction3 = new PaymentRequest("pr1", 551, "USD", "Notes pr1", "push notification");
+//
+//    var pr2_transaction1 = new PaymentRequest("pr2", 552, "USD", "Notes pr2", "budget reserve");
+//    var pr2_transaction2 = new PaymentRequest("pr2", 552, "USD", "Notes pr2", "approval workflow");
+//    var pr2_transaction3 = new PaymentRequest("pr2", 552, "USD", "Notes pr2", "push notification");
+//
+//    paymentRequestProducer.send(pr1_transaction1);
+//    paymentRequestProducer.send(pr1_transaction2);
+//    paymentRequestProducer.send(pr1_transaction3);
+//    paymentRequestProducer.send(pr2_transaction1);
+//    paymentRequestProducer.send(pr2_transaction2);
+//    paymentRequestProducer.send(pr2_transaction3);
+//    // send some duplicate data
+//    paymentRequestProducer.send(pr1_transaction2);
+//    paymentRequestProducer.send(pr2_transaction3);
+
+    // 12.
+    var fo1 = new FoodOrder(2, "bread");
+    var fo2 = new FoodOrder(1, "cheese");
+    var fo3 = new FoodOrder(5, "water");
+
+    foodOrderProducer.send(fo1);
+    foodOrderProducer.send(fo2);
+    foodOrderProducer.send(fo3);
   }
 }

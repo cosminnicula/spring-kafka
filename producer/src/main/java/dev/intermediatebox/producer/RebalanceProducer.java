@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Service
+//@Service
 public class RebalanceProducer {
   private static final Logger log = LoggerFactory.getLogger(RebalanceProducer.class);
   @Autowired

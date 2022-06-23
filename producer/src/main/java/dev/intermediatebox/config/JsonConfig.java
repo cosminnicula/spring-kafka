@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 // 6.
-//@Configuration
+@Configuration
 public class JsonConfig {
   @Bean
   public ObjectMapper objectMapper() {

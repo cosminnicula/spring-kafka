@@ -7,6 +7,10 @@
   <artifactId>consumer</artifactId>
   <packaging>jar</packaging>
 
+  <properties>
+    <caffeine.version>3.0.6</caffeine.version>
+  </properties>
+
   <parent>
     <groupId>dev.intermediatebox</groupId>
     <artifactId>parent</artifactId>
@@ -27,8 +31,18 @@
       <artifactId>jackson-databind</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+      <version>${caffeine.version}</version>
+    </dependency>
+
   </dependencies>
 </project>
