@@ -13,7 +13,7 @@ import org.springframework.kafka.retrytopic.TopicSuffixingStrategy;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Service;
 
-@Service
+//@Service
 public class Image2Consumer {
   private static final Logger log = LoggerFactory.getLogger(Image2Consumer.class);
 
