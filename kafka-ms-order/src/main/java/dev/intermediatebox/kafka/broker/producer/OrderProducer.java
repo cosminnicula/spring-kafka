@@ -1,6 +1,6 @@
-package dev.intermediatebox.broker.producer;
+package dev.intermediatebox.kafka.broker.producer;
 
-import dev.intermediatebox.broker.message.OrderMessage;
+import dev.intermediatebox.kafka.broker.message.OrderMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

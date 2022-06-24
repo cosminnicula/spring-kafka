@@ -1,4 +1,4 @@
-package dev.intermediatebox.entity;
+package dev.intermediatebox.kafka.entity;
 
 import lombok.Getter;
 import lombok.Setter;

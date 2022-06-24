@@ -1,4 +1,4 @@
-package dev.intermediatebox.broker.message;
+package dev.intermediatebox.kafka.broker.message;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
