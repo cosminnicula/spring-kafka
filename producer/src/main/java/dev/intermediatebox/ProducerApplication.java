@@ -3,6 +3,7 @@ package dev.intermediatebox;
 import dev.intermediatebox.entity.*;
 import dev.intermediatebox.producer.*;
 import dev.intermediatebox.service.ImageService;
+import dev.intermediatebox.service.InvoiceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -38,11 +39,23 @@ public class ProducerApplication implements CommandLineRunner {
 //  @Autowired
 //  private SimpleNumberProducer simpleNumberProducer;
 
-  @Autowired
-  private ImageService imageService;
+//  @Autowired
+//  private ImageService imageService;
+//
+//  @Autowired
+//  private ImageProducer imageProducer;
+
+//  @Autowired
+//  InvoiceService invoiceService;
+//
+//  @Autowired
+//  InvoiceProducer invoiceProducer;
 
   @Autowired
-  private ImageProducer imageProducer;
+  ImageService imageService;
+
+  @Autowired
+  Image2Producer image2Producer;
 
   public static void main(String[] args) {
     SpringApplication.run(ProducerApplication.class, args);
@@ -110,7 +123,33 @@ public class ProducerApplication implements CommandLineRunner {
 //      simpleNumberProducer.send(simpleNumber);
 //    }
 
-    // 14.
+//    // 14.
+//    var image1 = imageService.generateImage("jpg");
+//    var image2 = imageService.generateImage("svg");
+//    var image3 = imageService.generateImage("png");
+//    var image4 = imageService.generateImage("gif");
+//    var image5 = imageService.generateImage("bmp");
+//    var image6 = imageService.generateImage("tiff");
+//
+//    imageProducer.send(image1, 0);
+//    imageProducer.send(image2, 0);
+//    imageProducer.send(image3, 0);
+//    imageProducer.send(image4, 1);
+//    imageProducer.send(image5, 1);
+//    imageProducer.send(image6, 1);
+
+//    // 15.
+//    for (int i = 0; i < 10; i++) {
+//      var invoice = invoiceService.generateInvoice();
+//
+//      if (i > 5) {
+//        invoice.setAmount(0);
+//      }
+//
+//      invoiceProducer.send(invoice);
+//    }
+
+    // 16.
     var image1 = imageService.generateImage("jpg");
     var image2 = imageService.generateImage("svg");
     var image3 = imageService.generateImage("png");
@@ -118,11 +157,11 @@ public class ProducerApplication implements CommandLineRunner {
     var image5 = imageService.generateImage("bmp");
     var image6 = imageService.generateImage("tiff");
 
-    imageProducer.send(image1, 0);
-    imageProducer.send(image2, 0);
-    imageProducer.send(image3, 0);
-    imageProducer.send(image4, 1);
-    imageProducer.send(image5, 1);
-    imageProducer.send(image6, 1);
+    image2Producer.send(image1, 0);
+    image2Producer.send(image2, 0);
+    image2Producer.send(image3, 0);
+    image2Producer.send(image4, 1);
+    image2Producer.send(image5, 1);
+    image2Producer.send(image6, 1);
   }
 }

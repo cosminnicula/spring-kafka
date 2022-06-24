@@ -2,6 +2,8 @@ kafka-topics --list --bootstrap-server=localhost:9092
 
 kafka-console-consumer --topic sampletopic --from-beginning --bootstrap-server=localhost:9092
 
+kafka-topics --delete --topic sampletopic --bootstrap-server=localhost:9092
+
 ---
 
 Producer & Consumer example
@@ -66,3 +68,16 @@ kafka-topics --create --topic=t-simple-number --partitions=1 --replication-facto
 14.ImageProducer & ImageConsumer (blocking retrying consumer -> the consumer keeps retrying and further messages are not processed on a particular topic until success or retry failure -> can cause bottleneck -> create a retry policy not too short and not too long)
 kafka-topics --create --topic=t-image --partitions=2 --replication-factor=1 --bootstrap-server=localhost:9092
 kafka-topics --describe --topic=t-image --bootstrap-server=localhost:9092
+
+15.InvoiceProducer & InvoiceConsumer (dead letter topic -> is like a combination of retry + producer publishing to another topic called "dead letter topic")
+kafka-topics --create --topic=t-invoice --partitions=2 --replication-factor=1 --bootstrap-server=localhost:9092
+kafka-topics --create --topic=t-invoice-dead-letter --partitions=2 --replication-factor=1 --bootstrap-server=localhost:9092
+kafka-topics --describe --topic=t-invoice --bootstrap-server=localhost:9092
+kafka-topics --describe --topic=t-invoice-dead-letter --bootstrap-server=localhost:9092
+kafka-console-consumer --topic t-invoice --offset=earliest --partition=0 --bootstrap-server=localhost:9092
+kafka-console-consumer --topic t-invoice --offset=earliest --partition=1 --bootstrap-server=localhost:9092
+kafka-console-consumer --topic t-invoice-dead-letter --offset=earliest --partition=0 --bootstrap-server=localhost:9092
+kafka-console-consumer --topic t-invoice-dead-letter --offset=earliest --partition=1 --bootstrap-server=localhost:9092
+
+16.Image2Producer & Image2Consumer (non-blocking retrying consumer -> when consumer encounters error, it proceeds by consuming next message(s), while the previous message is retried in the background / non-blocking)
+kafka-topics --create --topic=t-image-2 --partitions=2 --replication-factor=1 --bootstrap-server=localhost:9092
