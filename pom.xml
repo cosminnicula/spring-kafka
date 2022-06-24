@@ -25,6 +25,10 @@
     <module>producer-consumer</module>
     <module>producer</module>
     <module>consumer</module>
+    <module>kafka-ms-order</module>
+    <module>kafka-ms-pattern</module>
+    <module>kafka-ms-reward</module>
+    <module>kafka-ms-storage</module>
   </modules>
 
   <dependencies>

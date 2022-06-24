@@ -5,6 +5,7 @@ kafka-console-consumer --topic sampletopic --from-beginning --bootstrap-server=l
 kafka-topics --delete --topic sampletopic --bootstrap-server=localhost:9092
 
 ---
+Kafka Core (producer, consumer, producer-consumer)
 
 Producer & Consumer example
 1.HelloKafkaConsumer
@@ -84,3 +85,9 @@ kafka-topics --create --topic=t-image-2 --partitions=2 --replication-factor=1 --
 
 17.GeneralLedgerProducer & GeneralLedgerConsumer, GeneralLedgerScheduler (pause/resume consumers)
 kafka-topics --create --topic=t-general-ledger --partitions=1 --replication-factor=1 --bootstrap-server=localhost:9092
+
+---
+
+Kafka microservice (kafka-ms-order, kafka-ms-pattern, kafka-ms-reward, kafka-ms-storage)
+
+kafka-topics --describe --topic=t-commodity-order --bootstrap-server=localhost:9092
