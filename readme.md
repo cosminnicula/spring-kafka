@@ -88,6 +88,13 @@ kafka-topics --create --topic=t-general-ledger --partitions=1 --replication-fact
 
 ---
 
-Kafka microservice (kafka-ms-order, kafka-ms-pattern, kafka-ms-reward, kafka-ms-storage)
+Kafka microservice (kafka-ms-order -> api + kafka producer, kafka-ms-pattern -> kafka consumer, kafka-ms-reward, kafka-ms-storage)
 
+1.
+(t-commodity-order is created automatically by KafkaConfig)
 kafka-topics --describe --topic=t-commodity-order --bootstrap-server=localhost:9092
+kafka-console-consumer --topic t-commodity-order --from-beginning --bootstrap-server=localhost:9092
+
+2.
+kafka-topics --create --topic=t-commodity-promotion --partitions=1 --replication-factor=1 --bootstrap-server=localhost:9092
+kafka-console-consumer --topic t-commodity-promotion --from-beginning --bootstrap-server=localhost:9092
