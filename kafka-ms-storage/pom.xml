@@ -7,6 +7,11 @@
   <artifactId>kafka-ms-storage</artifactId>
   <packaging>jar</packaging>
 
+  <properties>
+    <caffeine.version>3.0.6</caffeine.version>
+    <jedis.version>4.2.1</jedis.version>
+  </properties>
+
   <parent>
     <groupId>dev.intermediatebox</groupId>
     <artifactId>parent</artifactId>
@@ -33,6 +38,15 @@
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+      <version>${caffeine.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
     </dependency>
   </dependencies>
 </project>

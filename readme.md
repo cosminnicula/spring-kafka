@@ -95,6 +95,6 @@ Kafka microservice (kafka-ms-order -> api + kafka producer, kafka-ms-pattern -> 
 kafka-topics --describe --topic=t-commodity-order --bootstrap-server=localhost:9092
 kafka-console-consumer --topic t-commodity-order --from-beginning --bootstrap-server=localhost:9092
 
-2.
+2.DiscountProducer and PromotionProducer publish to t-commodity-promotion; PromotionConsumer consumes from t-commodity-promotion
 kafka-topics --create --topic=t-commodity-promotion --partitions=1 --replication-factor=1 --bootstrap-server=localhost:9092
 kafka-console-consumer --topic t-commodity-promotion --from-beginning --bootstrap-server=localhost:9092
