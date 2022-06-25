@@ -1,20 +1,26 @@
 package dev.intermediatebox.kafka.broker.consumer;
 
 import dev.intermediatebox.kafka.broker.message.OrderMessage;
+import dev.intermediatebox.kafka.broker.message.OrderReplyMessage;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
+// Notice the difference from OrderConsumer
+// - @SendTo annotation
+// - OrderReplyMessage return type, instead of void
 @Service
-public class OrderConsumer {
+public class OrderReplyConsumer {
 
-  private static final Logger log = LoggerFactory.getLogger(OrderConsumer.class);
+  private static final Logger log = LoggerFactory.getLogger(OrderReplyConsumer.class);
 
   @KafkaListener(topics = "t-commodity-order")
-  public void listen(ConsumerRecord<String, OrderMessage> consumerRecord) {
+  @SendTo("t-commodity-order-reply")
+  public OrderReplyMessage listen(ConsumerRecord<String, OrderMessage> consumerRecord) {
     var headers = consumerRecord.headers();
     var orderMessage = consumerRecord.value();
 
@@ -31,5 +37,9 @@ public class OrderConsumer {
     var bonusAmount = (bonusPercentage / 100) * orderMessage.getPrice() * orderMessage.getQuantity();
 
     log.info("Bonus amount is {}", bonusAmount);
+
+    var replyMessage = new OrderReplyMessage();
+    replyMessage.setReplyMessage("Order " + orderMessage.getOrderNumber() + ", item " + orderMessage.getItemName() + " processed");
+    return replyMessage;
   }
 }

@@ -102,3 +102,7 @@ kafka-console-consumer --topic t-commodity-promotion --from-beginning --bootstra
 3.OrderConsumer (kafka-ms-reward) and OrderConsumer(kafka-ms-pattern) both listen to t-commodity-order
 OrderConsumer (kafka-ms-reward) extracts the bonus percentage from the headers if exists
 OrderConsumer (kafka-ms-pattern) simply consumes the message, without looking at the headers
+
+4.OrderConsumer (kafka-ms-reward) will act also as a publisher (OrderReplyConsumer), publishing messages to t-commodity-order-reply. OrderProducer will act also as a consumer (OrderReplyConsumer), listening to t-commodity-order-reply
+This flow is commonly known as asynchronous request/reply
+t-commodity-order-reply is created automatically by KafkaConfig
