@@ -98,3 +98,7 @@ kafka-console-consumer --topic t-commodity-order --from-beginning --bootstrap-se
 2.DiscountProducer and PromotionProducer publish to t-commodity-promotion; PromotionConsumer consumes from t-commodity-promotion
 kafka-topics --create --topic=t-commodity-promotion --partitions=1 --replication-factor=1 --bootstrap-server=localhost:9092
 kafka-console-consumer --topic t-commodity-promotion --from-beginning --bootstrap-server=localhost:9092
+
+3.OrderConsumer (kafka-ms-reward) and OrderConsumer(kafka-ms-pattern) both listen to t-commodity-order
+OrderConsumer (kafka-ms-reward) extracts the bonus percentage from the headers if exists
+OrderConsumer (kafka-ms-pattern) simply consumes the message, without looking at the headers
