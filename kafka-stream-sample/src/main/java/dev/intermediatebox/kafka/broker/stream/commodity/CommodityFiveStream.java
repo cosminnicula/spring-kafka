@@ -9,12 +9,17 @@ import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Produced;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.support.KafkaStreamBrancher;
 import org.springframework.kafka.support.serializer.JsonSerde;
 
 //@Configuration
-public class CommodityOneStream {
+public class CommodityFiveStream {
+  private static final Logger log = LoggerFactory.getLogger(CommodityFiveStream.class);
+
   @Bean
   public KStream<String, OrderMessage> kstreamCommodityTrading(StreamsBuilder builder) {
     var stringSerde = Serdes.String();
@@ -25,15 +30,29 @@ public class CommodityOneStream {
     var maskedCreditCardStream = builder.stream("t-commodity-order", Consumed.with(stringSerde, orderSerde))
         .mapValues(CommodityStreamUtil::maskCreditCard);
 
-    var patternStream = maskedCreditCardStream.mapValues(CommodityStreamUtil::mapToOrderPattern);
-    patternStream.to("t-commodity-pattern-one", Produced.with(stringSerde, orderPatternSerde));
+    final var branchProducer = Produced.with(stringSerde, orderPatternSerde);
+
+    new KafkaStreamBrancher<String, OrderPatternMessage>()
+        .branch(CommodityStreamUtil.isPlastic(),
+            kstream -> kstream.to("t-commodity-pattern-five-plastic", branchProducer))
+        .defaultBranch(kstream -> kstream.to("t-commodity-pattern-five-notplastic", branchProducer))
+        .onTopOf(maskedCreditCardStream.mapValues(CommodityStreamUtil::mapToOrderPattern));
 
     var rewardStream = maskedCreditCardStream.filter(CommodityStreamUtil.isLargeQuantity())
-        .mapValues(CommodityStreamUtil::mapToOrderReward);
-    rewardStream.to("t-commodity-reward-one", Produced.with(stringSerde, orderRewardSerde));
+        .filterNot(CommodityStreamUtil.isCheap()).map(CommodityStreamUtil.mapToOrderRewardChangeKey());
+    rewardStream.to("t-commodity-reward-five", Produced.with(stringSerde, orderRewardSerde));
 
-    maskedCreditCardStream.to("t-commodity-storage-one", Produced.with(stringSerde, orderSerde));
+    var storageStream = maskedCreditCardStream.selectKey(CommodityStreamUtil.generateStorageKey());
+    storageStream.to("t-commodity-storage-five", Produced.with(stringSerde, orderSerde));
+
+    // fraud processing
+    maskedCreditCardStream.filter((k, v) -> v.getOrderLocation().toUpperCase().startsWith("C"))
+        .foreach((k, v) -> this.reportFraud(v));
 
     return maskedCreditCardStream;
+  }
+
+  private void reportFraud(OrderMessage v) {
+    log.info("fraud detected  {}", v);
   }
 }

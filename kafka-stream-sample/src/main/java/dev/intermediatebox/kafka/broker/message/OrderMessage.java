@@ -27,6 +27,7 @@ public class OrderMessage {
 		copy.setItemName(this.getItemName());
 		copy.setOrderDateTime(this.getOrderDateTime());
 		copy.setOrderLocation(this.getOrderLocation());
+		copy.setOrderNumber(this.getOrderNumber());
 		copy.setQuantity(this.getQuantity());
 		copy.setPrice(this.getPrice());
 		return copy;
