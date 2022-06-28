@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.support.serializer.JsonSerde;
 
-@Configuration
+//@Configuration
 public class InventoryOneStream {
   @Bean
   public KStream<String, InventoryMessage> kstreamInventory(StreamsBuilder builder) {

@@ -398,6 +398,7 @@ Run Postman -> Feedback -> Create random feedback
 1.Kafka stream - summing records
 
 See InventoryRequest, InventoryApi, InventoryMessage, InventoryProducer, InventoryAction, InventoryService
+See InventoryOneStream
 
 kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-inventory
 kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-inventory-total-one
@@ -405,3 +406,13 @@ kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replica
 kafka-console-consumer --topic t-commodity-inventory-total-one --from-beginning --property print.key=true --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer --bootstrap-server=localhost:9092
 
 Run Postman -> Inventory -> Sum record simulation
+
+2.Subtract value
+
+See InventoryTwoStream
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-inventory-total-two
+
+kafka-console-consumer --topic t-commodity-inventory-total-two --from-beginning --property print.key=true --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer --bootstrap-server=localhost:9092
+
+Run Postman -> Inventory -> Subtract Record Simulation
