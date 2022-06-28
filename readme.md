@@ -426,3 +426,13 @@ kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replica
 kafka-console-consumer --topic t-commodity-inventory-total-three --from-beginning --property print.key=true --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer --bootstrap-server=localhost:9092
 
 Run Postman -> Inventory -> Subtract Record Simulation
+
+4.Timestamp extractor (extract transaction time from payload and use it as record timestamp)
+
+Built-in timestamp extractors: FailedOnInvalidTimestamp, LogAndSkipOnInvalidTimestamp, UsePreviousTimeOnInvalidTimestamp, WallclockTimestampExtractor
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-inventory-total-four
+
+kafka-console-consumer --topic t-commodity-inventory-total-four --from-beginning --property print.key=true --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer --bootstrap-server=localhost:9092
+
+Run Postman -> Inventory -> Subtract Record Simulation (also adjust local Operating System time)
