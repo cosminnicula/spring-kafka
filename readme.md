@@ -416,3 +416,13 @@ kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replica
 kafka-console-consumer --topic t-commodity-inventory-total-two --from-beginning --property print.key=true --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer --bootstrap-server=localhost:9092
 
 Run Postman -> Inventory -> Subtract Record Simulation
+
+3.Reduce
+
+See InventoryThreeStream
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-inventory-total-three
+
+kafka-console-consumer --topic t-commodity-inventory-total-three --from-beginning --property print.key=true --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer --bootstrap-server=localhost:9092
+
+Run Postman -> Inventory -> Subtract Record Simulation
