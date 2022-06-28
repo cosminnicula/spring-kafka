@@ -431,8 +431,22 @@ Run Postman -> Inventory -> Subtract Record Simulation
 
 Built-in timestamp extractors: FailedOnInvalidTimestamp, LogAndSkipOnInvalidTimestamp, UsePreviousTimeOnInvalidTimestamp, WallclockTimestampExtractor
 
+See InventoryFourStream
+
 kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-inventory-total-four
 
 kafka-console-consumer --topic t-commodity-inventory-total-four --from-beginning --property print.key=true --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer --bootstrap-server=localhost:9092
 
 Run Postman -> Inventory -> Subtract Record Simulation (also adjust local Operating System time)
+
+5.Tumbling Time Window (aggregate transactions on hourly basis)
+
+See InventoryFiveStream
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-inventory-total-five
+
+kafka-console-consumer --topic t-commodity-inventory-total-five --from-beginning --property print.key=true --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer --bootstrap-server=localhost:9092
+
+Run Postman -> Inventory -> Window Simulation
+
+Notice the format of the log messages in the IDE output: Something@1656449146/1656449146 -> Something is the original key, while the two epoch times represent the window start and window end
