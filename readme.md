@@ -336,3 +336,68 @@ kafka-console-consumer --topic t-commodity-customer-preference-wishlist --from-b
 kafka-console-consumer --topic t-commodity-customer-preference-all --from-beginning --property print.key=true --bootstrap-server=localhost:9092
 
 Run Postman -> Customer Preference collection -> Simulation
+
+---
+
+1.Kafka Stream - flash sale vote (see kafka-stream-flash-sale-1.jpg)
+
+See FlashSaleVoteOneStream
+
+The Kafka message is converted to "key: customerId, value: itemName" so entries could be treated as upsert in the Kafka stream table (groupBy itemName)
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-flashsale-vote
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-flashsale-vote-user-item --config "cleanup.policy=compact" --config "delete.retention.ms=2000"  --config "segment.ms=2000" --config "min.cleanable.dirty.ratio=0.01" --config "min.compaction.lag.ms=2000"
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-flashsale-vote-one-result
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-flashsale-vote-two-result
+
+kafka-console-consumer --topic t-commodity-flashsale-vote --from-beginning --property print.key=true --bootstrap-server=localhost:9092
+kafka-console-consumer --topic t-commodity-flashsale-vote-user-item --from-beginning --property print.key=true --bootstrap-server=localhost:9092
+kafka-console-consumer --topic t-commodity-flashsale-vote-one-result --from-beginning --property print.key=true --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer --bootstrap-server=localhost:9092
+
+Run Postman -> Flash sale -> Simulation
+
+2.Kafka stream state store (stateful operations)
+
+State store is on the same machine with processing node (no network overhead); The state store is not shared between processes or threads in processors
+State store is fault-tolerant: it can be quickly recovered in case of failure (uses changelog topic)
+
+ValueTansformer needs to implement either ValueTransformer or ValueTransformerSupplier interface
+
+See FlashSaleVoteTwoStream
+
+Run Postman -> Flash sale -> Create Random Flash Sale Vote
+
+kafka-console-consumer --topic t-commodity-flashsale-vote-two-result --from-beginning --property print.key=true --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer --bootstrap-server=localhost:9092
+
+Adjust FlashSaleVoteTwoValueTransformer -> voteStart / voteEnd and computer time to see ValueTransformer in action. 
+
+---
+
+1.Kafka stream - feedback rating: calculate average rating, based on sum and count of ratings; the average rating will be stored to Kafka stream state store
+
+See FeedbackRatingOneMessage, FeedbackRatingOneStoreValue, FeedbackRatingOneValueTransformer, FeedbackRatingOneStream
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-feedback-rating-one
+
+kafka-console-consumer --topic t-commodity-feedback-rating-one --from-beginning --property print.key=true --bootstrap-server=localhost:9092
+
+Run Postman -> Feedback -> Simulation
+
+2.Detailed rating (Map of ratings)
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-feedback-rating-two
+
+See FeedbackRatingTwoMessage, FeedbackRatingTwoStoreValue, FeedbackRatingTwoValueTransformer, FeedbackRatingTwoStream
+
+kafka-console-consumer --topic t-commodity-feedback-rating-two --from-beginning --property print.key=true --bootstrap-server=localhost:9092
+
+Run Postman -> Feedback -> Create random feedback
+
+---
+
+1.Kafka stream - summing records
+
+See InventoryRequest, InventoryApi, InventoryMessage, InventoryProducer, InventoryAction, InventoryService
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-inventory
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-inventory-total-one
