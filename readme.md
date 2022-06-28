@@ -401,3 +401,7 @@ See InventoryRequest, InventoryApi, InventoryMessage, InventoryProducer, Invento
 
 kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-inventory
 kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-inventory-total-one
+
+kafka-console-consumer --topic t-commodity-inventory-total-one --from-beginning --property print.key=true --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer --bootstrap-server=localhost:9092
+
+Run Postman -> Inventory -> Sum record simulation
