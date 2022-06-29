@@ -32,7 +32,8 @@
     <module>kafka-ms-storage</module>
 
     <module>kafka-stream-sample</module>
-    <module>kafka-stream-storage</module>
+
+    <module>kafka-connect</module>
   </modules>
 
   <dependencies>

@@ -7,3 +7,8 @@
 *.iws
 *.iml
 *.ipr
+
+/data/kafka-connect-data/**
+/data/kafka-data/**
+/data/zookeeper-data/**
+

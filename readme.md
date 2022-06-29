@@ -7,6 +7,8 @@ kafka-topics --delete --topic sampletopic --bootstrap-server=localhost:9092
 ---
 Kafka Core (producer, consumer, producer-consumer)
 
+docker-compose up
+
 Producer & Consumer example
 1.HelloKafkaConsumer
 kafka-topics --create --topic=t-hello --partitions=1 --replication-factor=1 --bootstrap-server=localhost:9092
@@ -450,3 +452,171 @@ kafka-console-consumer --topic t-commodity-inventory-total-five --from-beginning
 Run Postman -> Inventory -> Window Simulation
 
 Notice the format of the log messages in the IDE output: Something@1656449146/1656449146 -> Something is the original key, while the two epoch times represent the window start and window end
+
+6.Hopping Time Window (aggregate transactions on hourly basis, with a hop interval of 20 minutes)
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-inventory-six
+
+kafka-console-consumer --topic t-commodity-inventory-six --from-beginning --property print.key=true --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer --bootstrap-server=localhost:9092
+
+Run Postman -> Inventory -> Window Simulation (first change the inventorySimulationItem variable)
+
+---
+
+Kafka stream/stream joining
+
+1.Inner join Stream / Stream (left is online order, right is online payment; the key is online order number)
+
+See OnlineOrder* classes
+See OrderPaymentOneStream class
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-online-order
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-online-payment
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-join-order-payment-one
+
+kafka-console-consumer --topic t-commodity-online-order --from-beginning --property print.key=true --bootstrap-server=localhost:9092
+kafka-console-consumer --topic t-commodity-online-payment --from-beginning --property print.key=true --bootstrap-server=localhost:9092
+kafka-console-consumer --topic t-commodity-join-order-payment-one --from-beginning --property print.key=true --bootstrap-server=localhost:9092
+
+Run Postman -> Online Order / Payment -> Inner Join Simulation
+
+2.Left join Stream / Stream
+
+See OrderPaymentTwoStream class
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-join-order-payment-two
+
+kafka-console-consumer --topic t-commodity-join-order-payment-two --from-beginning --property print.key=true --bootstrap-server=localhost:9092
+
+Run Postman -> Online Order / Payment -> Left Join Simulation
+
+3.Outer join Stream / Stream
+
+See OrderPaymentThreeStream class
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-join-order-payment-three
+
+kafka-console-consumer --topic t-commodity-join-order-payment-three --from-beginning --property print.key=true --bootstrap-server=localhost:9092
+
+Run Postman -> Online Order / Payment -> Outer Join Simulation
+
+---
+
+Kafka table/table joining
+
+1.Inner join (left is color vote, right is layout vote; the key is username)
+
+Inner joins the two Tables, resulting a new Table; counts the number of colors and votes in the new Table
+
+See WebColorVote* and WebLayoutVote* classes
+See WebDesignVoteOneStream
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-web-vote-color
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-web-vote-layout
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-web-vote-one-username-color --config "cleanup.policy=compact" --config "delete.retention.ms=2000"  --config "segment.ms=2000" --config "min.cleanable.dirty.ratio=0.01" --config "min.compaction.lag.ms=2000"
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-web-vote-one-username-layout --config "cleanup.policy=compact" --config "delete.retention.ms=2000"  --config "segment.ms=2000" --config "min.cleanable.dirty.ratio=0.01" --config "min.compaction.lag.ms=2000"
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-web-vote-one-result
+
+kafka-console-consumer --topic t-commodity-web-vote-one-result --from-beginning --property print.key=true --property print.timestamp=true --bootstrap-server=localhost:9092
+
+Run Postman -> Web Design Vote -> Inner Join Simulation
+
+2.Left join
+
+See WebDesignVoteTwoStream
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-web-vote-two-result
+
+kafka-console-consumer --topic t-commodity-web-vote-two-result --from-beginning --property print.key=true --property print.timestamp=true --bootstrap-server=localhost:9092
+
+Run Postman -> Web Design Vote -> Left Join Simulation
+
+3.Outer join
+
+See WebDesignVoteThreeStream
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-web-vote-three-result
+
+kafka-console-consumer --topic t-commodity-web-vote-three-result --from-beginning --property print.key=true --property print.timestamp=true --bootstrap-server=localhost:9092
+
+Run Postman -> Web Design Vote -> Outer Join Simulation
+
+4.Outer join -> creates table directly from stream, without intermediary topic
+
+---
+
+Kafka stream/table joining (left is premium purchase, right is premium user; keys are purchase number and username; the join is done in a premium offer table)
+
+1.Inner join
+
+See Premium* classes
+See PremiumOfferOneStream
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-premium-purchase
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-premium-user --config "cleanup.policy=compact" --config "delete.retention.ms=2000"  --config "segment.ms=2000" --config "min.cleanable.dirty.ratio=0.01" --config "min.compaction.lag.ms=2000"
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-premium-offer-one
+
+kafka-console-consumer --topic t-commodity-premium-offer-one --from-beginning --property print.key=true --bootstrap-server=localhost:9092
+
+Run Postman -> Premium Purchase & User -> Premium Offer - Inner Join Stream / Table
+
+2.Left join
+
+See PremiumOfferTwoStream
+
+Note the special treatment in the joiner method when the user is null.
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-premium-offer-two
+
+kafka-console-consumer --topic t-commodity-premium-offer-two --from-beginning --property print.key=true --bootstrap-server=localhost:9092
+
+Run Postman -> Premium Purchase & User -> Premium Offer - Left Join Stream / Table
+
+---
+
+Kafka stream/globaltable joining
+
+1.Inner join
+
+See PremiumOfferThreeStream
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-premium-user-filtered
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-premium-offer-three
+
+kafka-console-consumer --topic t-commodity-premium-offer-three --from-beginning --property print.key=true --bootstrap-server=localhost:9092
+
+Run Postman -> Premium Purchase & User -> Premium Offer - Inner Join Stream / Global Table
+
+---
+
+Kafka stream/table co-partition
+
+
+See Subscription* classes
+See SubscriptionOfferOneStream
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 5 --replication-factor 1 --topic t-commodity-subscription-purchase
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 2 --replication-factor 1 --topic t-commodity-subscription-user --config "cleanup.policy=compact" --config "delete.retention.ms=2000" --config "segment.ms=2000" --config "min.cleanable.dirty.ratio=0.01" --config "min.compaction.lag.ms=2000"
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-subscription-offer-one
+
+By running SubscriptionOfferOneStream, the spring application will fail because input is not co-partitioned (notice that t-commodity-subscription-purchase has 5 partitions, while t-commodity-subscription-user has 2 partitions)
+The fix is included in SubscriptionOfferTwoStream, which uses a GlobalKTable instead of KTable
+
+kafka-topics --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-commodity-subscription-offer-two
+
+kafka-console-consumer --topic t-commodity-subscription-offer-two --from-beginning --property print.key=true --bootstrap-server=localhost:9092
+
+Run Postman -> Subscription Offer -> Diana Case
+
+---
+
+Kafka Connect
+
+docker-compose -f docker-compose-connect.yml -p connect up
+docker-compose -f docker-compose-connect-sample.yml -p connect-sample up
+
+Source connector -> read data from non-Kafka and writes to Kafka (producer)
+Sink connector -> read data from Kafka and writes to non-Kafka (consumer)
+Connectors: confluent.io/hub
+
+After docker-compose is up, run Postman -> Kafka Connect -> Connectors -> List connector plugins
