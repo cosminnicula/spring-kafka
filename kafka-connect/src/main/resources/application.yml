@@ -1,0 +1,15 @@
+logging:
+  pattern:
+    console: "[Kafka Connect] %clr(%d{HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:%5p}) %clr(---){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
+
+spring:
+  main:
+    banner-mode: OFF
+  kafka:
+    listener:
+      missing-topics-fatal: false
+    consumer:
+      group-id: kafka-connect-cg
+      auto-offset-reset: earliest
+      bootstrap-servers:
+      - localhost:9092

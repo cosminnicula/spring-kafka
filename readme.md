@@ -612,11 +612,120 @@ Run Postman -> Subscription Offer -> Diana Case
 
 Kafka Connect
 
-docker-compose -f docker-compose-connect.yml -p connect up
-docker-compose -f docker-compose-connect-sample.yml -p connect-sample up
+docker-compose -f docker-compose-connect.yml up
+docker-compose -f docker-compose-connect-sample.yml up
 
-Source connector -> read data from non-Kafka and writes to Kafka (producer)
-Sink connector -> read data from Kafka and writes to non-Kafka (consumer)
+Source connector -> read data from non-Kafka and writes to Kafka (read from target and sink to Kafka)
+Sink connector -> read data from Kafka and writes to non-Kafka (read from Kafka and sink to targt)
 Connectors: confluent.io/hub
 
 After docker-compose is up, run Postman -> Kafka Connect -> Connectors -> List connector plugins
+
+1.Basic connector (file source)
+
+Download https://www.confluent.io/hub/jcustenborder/kafka-connect-spooldir -> unzip to ./data/kafka-connect-data/connectors and restart docker-compose-connect (docker-compose -f docker-compose-connect.yml restart kafka-connect) -> run Postman -> Kafka Connect -> Connectors -> List connector plugins
+
+Run Postman -> Setup source connectors -> Spooldir - CSV
+
+kafka-console-consumer.sh --topic t-spooldir-csv-demo --from-beginning --bootstrap-server=localhost:9092
+kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
+kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group console-consumer-71849 --describe
+
+2.Basic connector (database sink)
+
+Download https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc and install (see above)
+
+Change Postman -> local-ip variable to point to the ip of the local machine (run "ip addr show docker0" in terminal https://www.howtogeek.com/devops/how-to-connect-to-localhost-within-a-docker-container)
+Run Postman -> Setup sink connectors -> PostgreSQL from CSV
+
+List connectors (Postman -> Connectors -> List connectors (name only)) and get connector status (Postman -> Connectors -> Get specific connector status)
+
+copy .csv to ./data/kafka-connect-data/inputs
+
+Check Postgresql -> kafka_employees table -> all records were imported
+
+3.Basic connector (sftp sink)
+
+Download https://www.confluent.io/hub/confluentinc/kafka-connect-sftp and install
+
+Run Postman -> Setup sink connectors -> SFTP (as JSON output)
+
+Check Filezilla (connect to "ip addr show docker0")
+
+---
+
+Kafka Connect - CDC
+
+1.CDC Postgresql source connector
+
+See ./data/postgresql/postgresql.conf for CDC specific settings
+See ./data/postgresql/docker-entrypoint-initdb.d/01-postgresql-publication.sql and 02-postgresql-schema.sql for initialization files
+
+Download and install https://www.confluent.io/hub/debezium/debezium-connector-postgresql
+
+Topics are created automatically by the CDC connector
+
+Run Postman -> Setup source connectors -> PostgreSQL CDC - Finance
+Run Postman -> Setup source connectors -> PostgreSQL CDC - Marketing (note that it has tombstone.on.delete=false)
+
+insert sample data to postgresql (see spring-kafka-scripts/kafka-connect-samples/cdc-legacy-modernization)
+
+kafka-topics.sh --bootstrap-server localhost:9092 --list
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic t-cdc-finance.public.fin_invoices --from-beginning
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic t-cdc-marketing.public.mkt_promotions --from-beginning
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic t-cdc-marketing.public.mkt_sales --from-beginning
+
+See the json in the console-consumer.
+Update some data in the database; see again the json in the console-consumer -> the "before" field is null
+Delete some data in the database; see again the json in the console-consumer -> the "before" field only shows primary key column (remaining columns are null)
+To have the "before" filed behave correctly, run the following commands in postgresql:
+  ALTER TABLE public.fin_invoices REPLICA IDENTITY FULL;
+  ALTER TABLE public.mkt_promotions REPLICA IDENTITY FULL;
+  ALTER TABLE public.mkt_sales REPLICA IDENTITY FULL;
+
+2.CDC Postgresql sink connector
+
+DROP TABLE IF EXISTS kafka_fin_invoices;
+
+CREATE TABLE IF NOT EXISTS kafka_fin_invoices (
+    invoice_id INT PRIMARY KEY,
+    invoice_amount INT,
+    invoice_currency VARCHAR(3),
+    invoice_number VARCHAR(50),
+    invoice_date DATE
+);
+
+Run Postman -> Setup sink connectors -> PostgreSQL from finance (invoices) (note that auto.create and auto.evolve is set to false)
+
+Add, update and delete some data in fin_invoices, and see that the changes are propagated to kafka_fin_invoices
+
+
+3.CDC Postgresql sink connector
+
+See CdcMessage, CdcPayloadMessage, CdcSourceMessage, MarketingPromotionMessage, MarketingSalesMessage
+See CdcMarketingListener
+
+Start kafka-connect spring project and see console output
+
+Insert / Update / Delete some data in the mkt_sales and mkt_promotions
+
+See spring project console output
+
+4.CDC Postgresql source connector
+
+Run SQL scripts in ./spring-kafka-scripts/kafka-connect-samples/data-engineering
+
+Run Postman -> Setup source connectors -> PostgreSQL - Person Address
+
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --property print.key=true --topic t-person-address-postgresql
+
+Run Postman -> Setup source connectors -> PostgreSQL person address from target topic
+
+5.CDC HTTP source connector
+
+Download an install https://www.confluent.io/hub/castorm/kafka-connect-http
+
+Create mockaroo API endpoint based on Spring Kafka - Person Address (JSON).schema.json file
+
+
+Credits to Udemy/Java Spring & Apache Kafka Bootcamp - Basic to Complete
