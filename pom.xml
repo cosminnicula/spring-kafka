@@ -34,6 +34,10 @@
     <module>kafka-stream-sample</module>
 
     <module>kafka-connect</module>
+
+    <module>kafka-binary-data</module>
+
+    <module>avro</module>
   </modules>
 
   <dependencies>

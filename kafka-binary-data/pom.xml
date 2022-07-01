@@ -4,11 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>dev.intermediatebox</groupId>
-  <artifactId>kafka-connect</artifactId>
+  <artifactId>kafka-binary-data</artifactId>
   <packaging>jar</packaging>
 
   <properties>
-    <faker.version>1.0.2</faker.version>
+    <commons-io.version>2.11.0</commons-io.version>
   </properties>
 
   <parent>
@@ -39,9 +39,9 @@
       <artifactId>jackson-datatype-jsr310</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.github.javafaker</groupId>
-      <artifactId>javafaker</artifactId>
-      <version>${faker.version}</version>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>${commons-io.version}</version>
     </dependency>
   </dependencies>
 </project>

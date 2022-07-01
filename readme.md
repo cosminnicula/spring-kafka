@@ -625,7 +625,7 @@ After docker-compose is up, run Postman -> Kafka Connect -> Connectors -> List c
 
 Download https://www.confluent.io/hub/jcustenborder/kafka-connect-spooldir -> unzip to ./data/kafka-connect-data/connectors and restart docker-compose-connect (docker-compose -f docker-compose-connect.yml restart kafka-connect) -> run Postman -> Kafka Connect -> Connectors -> List connector plugins
 
-Run Postman -> Setup source connectors -> Spooldir - CSV
+Run Postman -> Kafka Connect -> Setup source connectors -> Spooldir - CSV
 
 kafka-console-consumer.sh --topic t-spooldir-csv-demo --from-beginning --bootstrap-server=localhost:9092
 kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
@@ -636,7 +636,7 @@ kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group console-consu
 Download https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc and install (see above)
 
 Change Postman -> local-ip variable to point to the ip of the local machine (run "ip addr show docker0" in terminal https://www.howtogeek.com/devops/how-to-connect-to-localhost-within-a-docker-container)
-Run Postman -> Setup sink connectors -> PostgreSQL from CSV
+Run Postman -> Kafka Connect -> Setup sink connectors -> PostgreSQL from CSV
 
 List connectors (Postman -> Connectors -> List connectors (name only)) and get connector status (Postman -> Connectors -> Get specific connector status)
 
@@ -648,7 +648,7 @@ Check Postgresql -> kafka_employees table -> all records were imported
 
 Download https://www.confluent.io/hub/confluentinc/kafka-connect-sftp and install
 
-Run Postman -> Setup sink connectors -> SFTP (as JSON output)
+Run Postman -> Kafka Connect -> Setup sink connectors -> SFTP (as JSON output)
 
 Check Filezilla (connect to "ip addr show docker0")
 
@@ -665,8 +665,8 @@ Download and install https://www.confluent.io/hub/debezium/debezium-connector-po
 
 Topics are created automatically by the CDC connector
 
-Run Postman -> Setup source connectors -> PostgreSQL CDC - Finance
-Run Postman -> Setup source connectors -> PostgreSQL CDC - Marketing (note that it has tombstone.on.delete=false)
+Run Postman -> Kafka Connect -> Setup source connectors -> PostgreSQL CDC - Finance
+Run Postman -> Kafka Connect -> Setup source connectors -> PostgreSQL CDC - Marketing (note that it has tombstone.on.delete=false)
 
 insert sample data to postgresql (see spring-kafka-scripts/kafka-connect-samples/cdc-legacy-modernization)
 
@@ -695,7 +695,7 @@ CREATE TABLE IF NOT EXISTS kafka_fin_invoices (
     invoice_date DATE
 );
 
-Run Postman -> Setup sink connectors -> PostgreSQL from finance (invoices) (note that auto.create and auto.evolve is set to false)
+Run Postman -> Kafka Connect -> Setup sink connectors -> PostgreSQL from finance (invoices) (note that auto.create and auto.evolve is set to false)
 
 Add, update and delete some data in fin_invoices, and see that the changes are propagated to kafka_fin_invoices
 
@@ -715,11 +715,11 @@ See spring project console output
 
 Run SQL scripts in ./spring-kafka-scripts/kafka-connect-samples/data-engineering
 
-Run Postman -> Setup source connectors -> PostgreSQL - Person Address
+Run Postman -> Kafka Connect -> Setup source connectors -> PostgreSQL - Person Address
 
 kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --property print.key=true --topic t-person-address-postgresql
 
-Run Postman -> Setup source connectors -> PostgreSQL person address from target topic
+Run Postman -> Kafka Connect -> Setup sink connectors -> PostgreSQL person address from target topic
 
 5.CDC HTTP source connector
 
@@ -727,5 +727,104 @@ Download an install https://www.confluent.io/hub/castorm/kafka-connect-http
 
 Create mockaroo API endpoint based on Spring Kafka - Person Address (JSON).schema.json file
 
+Run Postman -> Kafka Connect -> Setup source connectors -> HTTP - Person Address
+
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic t-person-address-http
+
+6.Custom source
+
+See AddressMessage, PersonMessage, PersonProducer, PersonAddressScheduler
+
+kafka-topics.sh --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic t-person-address-custom
+
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic t-person-address-custom
+
+Run kafka-connect spring application
+
+6.Elasticsearch sink
+
+Create Elasticsearch deployment on https://www.elastic.co/cloud/
+
+Download and install https://www.confluent.io/hub/confluentinc/kafka-connect-elasticsearch
+
+Change Postman elasticsearch* variables
+
+Run Postman -> Kafka Connect -> Setup sink connectors -> Elasticsearch 01 - setup privileges, Elasticsearch 02 - setup roles, Elasticsearch 03 - create sink
+
+Run Postman -> Kafka Connect -> Elasticsearch
+
+---
+
+Kafka Connect & Kafka Stream
+
+Flow: Kafka Connect sources (postgresql, http, custom) publishes to kafka topics (t-person-address-postgresql, t-person-address-t-http, t-person-address-t-custom); Kafka Stream converts to a single format and publishes to t-person-address-target; Kafka Connect sinks to Elasticsearch
+
+1.Postgresql to target
+
+See KafkaStreamConfig, KafkaConnectMessage, KafkaConnectSchema, PersonAddressFromPostgresqlStream
+
+To test postgresql to target topic:
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic t-person-address-postgresql --property print.key=true
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic t-person-address-target --property print.key=true
+
+Run kafka-connect spring application
+
+Before proceeding to next step, pause the source connector for postgresql (pause the name of the Postman -> Kafka Connect -> Setup source connectors -> PostgreSQL - Person Address)
+
+2.HTTP to target
+
+See KafkaConnectPersonTargetMessage, KafkaConnectPersonAddressTargetKeySchema, KafkaConnectPersonAddressTargetValueSchema, KafkaConnectPersonAddressFromHttpMessage, KafkaConnectPersonMessageSnakeCase, KafkaConnectAddressMessageSnakeCase, PersonAddressFromHttpStream
+
+To test postgresql to target topic:
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic t-person-address-http --property print.key=true
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic t-person-address-target --property print.key=true
+
+Run kafka-connect spring application
+
+Note: the http messages inside t-person-address-target don't have the same exact structure as the postgresql meessages (e.g. for http, the key type is int32 and optional=false, whereas for postgresql the type is string and optional=true)
+
+Run kafka-connect spring application
+
+Before proceeding to next step, pause the source connector for http (pause the name of the Postman -> Kafka Connect -> Setup source connectors -> HTTP - Person Address
+
+3.Custom to target
+
+See PersonAddressFromCustomStream
+
+To test postgresql to target topic:
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic t-person-address-custom --property print.key=true
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic t-person-address-target --property print.key=true
+
+Run kafka-connect spring application
+
+4.Extra
+
+To change the default converter (org.apache.kafka.connect.json.JsonConverter, as defined in docker-compose-connect.yml), change Postman -> Kafka Connect -> Setup source connectors -> HTTP - Person Address and add key.converter=org.apache.kafka.connect.storage.StringConverter (do the same for value.converter).
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic t-person-address-http --property print.key=true
+The messages are in plain string, and not in json format
+
+---
+
+Binary data
+
+docker-compose -f docker-compose-full.yml up
+docker-compose -f docker-compose-full-sample.yml up
+
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic binary-topic
+
+Run kafka-binary-data spring application
+
+---
+
+Avro
+
+1.Simple Avro
+
+See Hello.avsc
+
+Run Maven -> Lifecycle -> Compile (it will generate src/main/java/dev.intermediatebox.avro.data.Hello)
+
+Run HelloAvro java class -> it will produce the helloAvro.avro binary file
+Run HelloAvroReader java class to convert the binary file to java object
 
 Credits to Udemy/Java Spring & Apache Kafka Bootcamp - Basic to Complete
