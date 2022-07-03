@@ -1,0 +1,35 @@
+{
+	"type": "record",
+	"namespace": "dev.intermediatebox.avro.data",
+	"name": "Avro03",
+	"doc": "Sample optional using union",
+	"fields": [
+		{
+			"name": "myMandatoryValue",
+			"type": "string"
+		},
+		{
+			"name": "myOptionalValue",
+			"type": [
+				"null",
+				"string"
+			],
+			"default": null
+		},
+		{
+			"name": "myOptionalValueWithDefault",
+			"type": [
+				"string",
+				"null"
+			],
+			"default": "The default value"
+		},
+		{
+			"name": "myWeirdButPossibleValue",
+			"type": [
+				"int",
+				"boolean"
+			]
+		}
+	]
+}

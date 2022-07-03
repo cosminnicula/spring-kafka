@@ -1,0 +1,105 @@
+{
+	"type": "record",
+	"namespace": "dev.intermediatebox.avro.data",
+	"name": "Avro11Person",
+	"fields": [
+		{
+			"name": "firstName",
+			"type": "string"
+		},
+		{
+			"name": "lastName",
+			"type": "string"
+		},
+		{
+			"name": "birthDate",
+			"type": {
+				"type": "int",
+				"logicalType": "date"
+			}
+		},
+		{
+			"name": "address",
+			"namespace": "dev.intermediatebox.avro.data",
+			"type": {
+				"type": "record",
+				"namespace": "dev.intermediatebox.avro.data",
+				"name": "Avro11Address",
+				"fields": [
+					{
+						"name": "addressLine1",
+						"type": "string"
+					},
+					{
+						"name": "addressLine2",
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					{
+						"name": "city",
+						"type": "string"
+					},
+					{
+						"name": "zipCode",
+						"type": "string"
+					},
+					{
+						"name": "country",
+						"type": {
+							"type": "record",
+							"namespace": "dev.intermediatebox.avro.data",
+							"name": "Avro11Country",
+							"fields": [
+								{
+									"name": "code",
+									"type": "string",
+									"doc": "ISO 3166-1 alpha-2 country code"
+								},
+								{
+									"name": "name",
+									"type": "string",
+									"doc": "country name"
+								}
+							]
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "bankAccounts",
+			"type": {
+				"type": "array",
+				"items": {
+					"type": "record",
+					"namespace": "dev.intermediatebox.avro.data",
+					"name": "Avro11BankAccount",
+					"fields": [
+						{
+							"name": "bankName",
+							"type": "string"
+						},
+						{
+							"name": "accountHolderName",
+							"type": "string"
+						},
+						{
+							"name": "accountNumber",
+							"type": "string"
+						},
+						{
+							"name": "bankClearingCode",
+							"type": "string"
+						},
+						{
+							"name": "currencyCode",
+							"type": "string"
+						}
+					]
+				}
+			}
+		}
+	]
+}

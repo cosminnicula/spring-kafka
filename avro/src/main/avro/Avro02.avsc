@@ -1,0 +1,45 @@
+{
+	"type": "record",
+	"namespace": "dev.intermediatebox.avro.data",
+	"name": "Avro02",
+	"doc": "Sample logical types",
+	"fields": [
+		{
+			"name": "myDecimal",
+			"type": {
+				"type": "bytes",
+				"logicalType": "decimal",
+				"precision": 20,
+				"scale": 5
+			}
+		},
+		{
+			"name": "myUUID",
+			"type": {
+				"type": "string",
+				"logicalType": "uuid"
+			}
+		},
+		{
+			"name": "myDate",
+			"type": {
+				"type": "int",
+				"logicalType": "date"
+			}
+		},
+		{
+			"name": "myTimeMillis",
+			"type": {
+				"type": "int",
+				"logicalType": "time-millis"
+			}
+		},
+		{
+			"name": "myTimestampMillis",
+			"type": {
+				"type": "long",
+				"logicalType": "timestamp-millis"
+			}
+		}
+	]
+}

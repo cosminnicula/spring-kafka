@@ -1,0 +1,15 @@
+{
+	"type": "record",
+	"namespace": "dev.intermediatebox.avro.data",
+	"name": "EmployeeBackwardV1",
+	"fields": [
+		{
+			"name": "firstName",
+			"type": "string"
+		},
+		{
+			"name": "lastName",
+			"type": "string"
+		}
+	]
+}

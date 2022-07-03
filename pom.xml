@@ -10,7 +10,7 @@
   <packaging>pom</packaging>
 
   <properties>
-    <java.version>11</java.version>
+    <java.version>17</java.version>
     <lombok.version>1.18.20</lombok.version>
     <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
   </properties>
@@ -38,6 +38,9 @@
     <module>kafka-binary-data</module>
 
     <module>avro</module>
+
+    <module>kafka-avro-producer</module>
+    <module>kafka-avro-consumer</module>
   </modules>
 
   <dependencies>
@@ -76,4 +79,11 @@
       </plugin>
     </plugins>
   </build>
+
+  <repositories>
+    <repository>
+      <id>confluent</id>
+      <url>https://packages.confluent.io/maven/</url>
+    </repository>
+  </repositories>
 </project>

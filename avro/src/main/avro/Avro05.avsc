@@ -1,0 +1,21 @@
+{
+	"type": "record",
+	"namespace": "dev.intermediatebox.avro.data",
+	"name": "Avro05",
+	"doc": "Sample enum in same schema",
+	"fields": [
+		{
+			"name": "maritalStatus",
+			"type": {
+				"type": "enum",
+				"name": "Avro05Enum",
+				"symbols": [
+					"SINGLE",
+					"MARRIED",
+					"DIVORCED",
+					"UNKNOWN"
+				]
+			}
+		}
+	]
+}

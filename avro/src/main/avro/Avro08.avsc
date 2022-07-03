@@ -1,0 +1,16 @@
+{
+	"type": "record",
+	"namespace": "dev.intermediatebox.avro.data",
+	"name": "Avro08",
+	"doc": "Sample fixed",
+	"fields": [
+		{
+			"name": "hash",
+			"type": {
+				"name": "Sha256",
+				"type": "fixed",
+				"size": 32
+			}
+		}
+	]
+}

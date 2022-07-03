@@ -1,0 +1,18 @@
+logging:
+  pattern:
+    console: "[Avro Consumer] %clr(%d{HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:%5p}) %clr(---){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
+
+spring:
+  main:
+    banner-mode: OFF
+  kafka:
+    bootstrap-servers:
+    - localhost:9092
+    consumer:
+      group-id: avro-cg
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+    properties:
+      schema.registry.url: http://localhost:8081
+      specific.avro.reader: true

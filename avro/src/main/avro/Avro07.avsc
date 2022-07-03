@@ -1,0 +1,51 @@
+{
+	"type": "record",
+	"namespace": "dev.intermediatebox.avro.data",
+	"name": "Avro07",
+	"doc": "Sample map",
+	"fields": [
+		{
+			"name": "bestHeroVotes",
+			"doc": "mandatory map",
+			"type": {
+				"type": "map",
+				"values": "string"
+			}
+		},
+		{
+			"name": "lotteryNumbers",
+			"doc": "map of (array of int)",
+			"type": {
+				"type": "map",
+				"values": {
+					"type": "array",
+					"items": "int"
+				}
+			}
+		},
+		{
+			"name": "favouriteFoods",
+			"doc": "optional map",
+			"type": [
+				"null",
+				{
+					"type": "map",
+					"values": "string"
+				}
+			],
+			"default": null
+		},
+		{
+			"name": "favouritePets",
+			"doc": "map with default value",
+			"type": {
+				"type": "map",
+				"values": "string"
+			},
+			"default": {
+				"dog lovers": "a cute little dog",
+				"cat fans": "white persian cat"
+			}
+		}
+	]
+}

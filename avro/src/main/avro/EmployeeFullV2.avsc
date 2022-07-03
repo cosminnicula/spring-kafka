@@ -1,0 +1,16 @@
+{
+	"type": "record",
+	"namespace": "dev.intermediatebox.avro.data",
+	"name": "EmployeeFullV2",
+	"fields": [
+		{
+			"name": "firstName",
+			"type": "string"
+		},
+		{
+			"name": "location",
+			"type": "string",
+			"default": "head-office"
+		}
+	]
+}

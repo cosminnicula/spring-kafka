@@ -1,0 +1,19 @@
+{
+	"type": "record",
+	"namespace": "dev.intermediatebox.avro.data",
+	"name": "BookAvro",
+	"fields": [
+		{
+			"name": "title",
+			"type": "string"
+		},
+		{
+			"name": "author",
+			"type": "string"
+		},
+		{
+			"name": "price",
+			"type": "int"
+		}
+	]
+}

@@ -1,0 +1,40 @@
+{
+	"type": "record",
+	"namespace": "dev.intermediatebox.avro.data",
+	"name": "Avro06",
+	"doc": "Sample array",
+	"fields": [
+		{
+			"name": "emails",
+			"doc": "mandatory array",
+			"type": {
+				"type": "array",
+				"items": "string"
+			}
+		},
+		{
+			"name": "numbers",
+			"doc": "mandatory array, with default",
+			"type": {
+				"type": "array",
+				"items": "int"
+			},
+			"default": [
+				4,
+				98
+			]
+		},
+		{
+			"name": "quotes",
+			"doc": "optional array",
+			"type": [
+				"null",
+				{
+					"type": "array",
+					"items": "string"
+				}
+			],
+			"default": null
+		}
+	]
+}

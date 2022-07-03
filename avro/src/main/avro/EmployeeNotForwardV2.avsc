@@ -1,0 +1,11 @@
+{
+	"type": "record",
+	"namespace": "dev.intermediatebox.avro.data",
+	"name": "EmployeeNotForwardV2",
+	"fields": [
+		{
+			"name": "firstName",
+			"type": "string"
+		}
+	]
+}

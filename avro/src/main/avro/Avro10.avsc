@@ -1,0 +1,38 @@
+{
+  "type" : "record",
+  "name" : "Company",
+  "namespace" : "dev.intermediatebox.avro.data",
+  "fields" : [ {
+    "name" : "branches",
+    "type" : {
+      "type" : "array",
+      "items" : {
+        "type" : "record",
+        "name" : "Branch",
+        "fields" : [ {
+          "name" : "address",
+          "type" : "string"
+        }, {
+          "name" : "branchId",
+          "type" : "long"
+        }, {
+          "name" : "city",
+          "type" : "string"
+        }, {
+          "name" : "country",
+          "type" : "string"
+        } ]
+      },
+      "java-class" : "java.util.List"
+    }
+  }, {
+    "name" : "code",
+    "type" : "string"
+  }, {
+    "name" : "companyId",
+    "type" : "long"
+  }, {
+    "name" : "name",
+    "type" : "string"
+  } ]
+}

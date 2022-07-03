@@ -1,0 +1,22 @@
+{
+	"type": "record",
+	"namespace": "dev.intermediatebox.avro.data",
+	"name": "Avro04",
+	"doc": "Sample enum",
+	"fields": [
+		{
+			"name": "allowedColor",
+			"type": {
+				"type": "enum",
+				"namespace": "dev.intermediatebox.avro.data",
+				"name": "Avro04Enum",
+				"doc": "Sample enum",
+				"symbols": [
+					"BLACK",
+					"BLUE",
+					"BROWN"
+				]
+			}
+		}
+	]
+}

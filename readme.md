@@ -827,4 +827,153 @@ Run Maven -> Lifecycle -> Compile (it will generate src/main/java/dev.intermedia
 Run HelloAvro java class -> it will produce the helloAvro.avro binary file
 Run HelloAvroReader java class to convert the binary file to java object
 
+2.Generic Avro
+
+With generic Avro, we set everything manually (not recommended)
+
+Run HelloAvroGeneric java class -> it will produce the helloAvroGeneric.avro binary file
+Run HelloAvroGenericReader java class to convert the binary file to java object 
+
+3.Specific Avro - basic
+
+Don't mix specific Avro with generate Avro classes. 
+
+See Avro01
+Run Avro01App
+
+4.Specific Avro - logical type
+
+See Avro02
+Run Avro02App
+
+Note that myDate, myTimeMillis, myTimestampMillis in Avro02 have java.time.* types
+Note that avro maven plugin uses java.nio.ByteBuffer instead of java.math.BigDecimal for the myDecimal field, which causes compiler error (https://stackoverflow.com/questions/56444213/generate-classes-with-decimal-datatype-with-avro-maven-plugin-1-9-0)
+
+5.Specific Avro - optional field
+
+See Avro03
+Run Avro03App
+
+Note that myWeirdButPossibleValue can be either boolean or int
+
+5.Specific Avro - enum
+
+See Avro04 and Avro05
+Run Avro04App and Avro05App
+
+Note that Avro enum is converted to Java enum
+
+6.Specific Avro - array
+
+See Avro06
+Run Avro06App
+
+Note that the "quotes" field is optional
+
+7.Specific Avro - map
+
+See Avro07
+Run Avro07App
+
+8.Specific Avro - fixed data type
+
+See Avro08
+Run Avro08App
+
+"Fixed" means a fixed number of bytes (bytes[])
+
+9.Avro reflection (generate Avro schema from existing java classes)
+
+See SimpleEntity
+Run Avro09App -> copy output to Avro09.avsc -> Run Maven Compile -> It will produce a new class LocalDate, which clashes with Java's LocalDate -> generated Avro09 needs to be refactored in order to solve the compiler errors
+
+See Company, Branch
+Run Avro10App -> copy output to Avro10.avsc -> change the namespace in Avro10.avsc -> Run Maven Compile -> It will produce new generated classes (Company and Branch)
+
+10.Generate Avro schema from JSON (see online generators)
+
+11.Nested Avro record
+
+See Avro11Person.avsc
+
+Run Avro11App
+
+12.Convert JSON string to Avro java object, and Avro java object to JSON string
+
+See BookAvro.avsc and BookJson
+
+Run BookJsonAvroConversion:
+*converts JSON string to Avro java object, based on existing .avsc file; serialize the Avro java object as .avro file; deserialize the .avro file as JSON string
+*converts Java POJO to JSON string via Jackson; converts JSON string to Avro java object, based on existing .avsc file; serialize the Avro java object as .avro file; deserialize the .avro file as JSON string; deserialize the JSON string to Java POJO via Jackson
+
+13.Avro Tools
+
+https://dlcdn.apache.org/avro/
+
+---
+
+Avro Schema Evolution
+
+1.Backward compatible
+
+EmployeeBackwardV2.avsc is backward compatible with EmployeeBackwardV1.avsc
+Run EmployeeBackwardApp: it writes .avro file using V1 schema, and reads the same .avro file using V2 schema
+
+EmployeeNotBackwardV1.avsc and EmployeeNotBackwardV2.avsc are not backward compatible
+Run EmployeeNotBackwardApp: it will throw exception
+
+2.Forward compatible
+
+EmployeeForwardV2.avsc is forward compatible with EmployeeForwardV1.avsc
+Run EmployeeForwardApp: it writes .avro file using V2 schema, and reads the same .avro file using V1 schema
+
+EmployeeNotForwardV1.avsc and EmployeeNotForwardV2.avsc are not backward compatible
+Run EmployeeNotForwardApp: it will throw exception
+
+3.Full compatible
+
+EmployeeFullV1.avsc is full compatible with EmployeeFullV2.avsc
+
+Run EmployeeFullApp
+
+---
+
+Confluent Schema Registry
+
+See Kafka Schema Registry Postman collection
+See https://www.conduktor.io
+
+Exercise:
+create topic with single partition
+Run Postman -> Kafka Schema Registry -> Subject -> Create new subject with schema of Avro01.avsc
+Run Postman -> Kafka Schema Registry -> Compatibility -> Update schema compatibility with "FULL"
+
+---
+
+Avro and Spring
+
+1.Avro Kafka Producer and Consumer (automatically generated Avro schema)
+
+See Avro01Producer
+Run Maven compile to generate Avro01 java class
+Run kafka-avro-producer spring application
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic sc-avro01 --property print.key=true
+
+Run Postman -> Kafka Schema Registry -> Schemas -> List schemas -> it will display sc-avro01-value schema; the schema is automatically created when sending first message, if not already created
+The producer will publish the message with sc-avro01-value schema
+
+See Avro01Consumer
+Run kafka-avro-consumer
+
+2.Avro Kafka Producer and Consumer (manually generated Avro schema)
+
+Create schema: Run Postman -> Subject -> Create new subject (the schema needs to be on a single line https://w3percentagecalculator.com/json-to-one-line-converter/, and the double quotes escaped - find and replace " with \") -> use Avro02.avsc, subject is sc-avro02-value
+
+See Avro02Producer
+Run kafka-avro-producer spring application
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic sc-avro02 --property print.key=true
+
+3.
+
+
 Credits to Udemy/Java Spring & Apache Kafka Bootcamp - Basic to Complete

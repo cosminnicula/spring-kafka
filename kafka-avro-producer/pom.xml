@@ -4,12 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>dev.intermediatebox</groupId>
-  <artifactId>avro</artifactId>
+  <artifactId>kafka-avro-producer</artifactId>
   <packaging>jar</packaging>
 
   <properties>
-    <avro.version>1.11.0</avro.version>
-    <jackson-core.version>2.13.2</jackson-core.version>
+    <confluent.version>7.1.1</confluent.version>
+    <javafaker.version>1.0.2</javafaker.version>
   </properties>
 
   <parent>
@@ -20,14 +20,22 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.avro</groupId>
-      <artifactId>avro</artifactId>
-      <version>${avro.version}</version>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-      <version>${jackson-core.version}</version>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.confluent</groupId>
+      <artifactId>kafka-avro-serializer</artifactId>
+      <version>${confluent.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.javafaker</groupId>
+      <artifactId>javafaker</artifactId>
+      <version>${javafaker.version}</version>
     </dependency>
   </dependencies>
 

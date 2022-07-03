@@ -1,0 +1,22 @@
+{
+	"type": "record",
+	"namespace": "dev.intermediatebox.avro.data",
+	"name": "Avro01",
+	"doc": "Sample default value",
+	"fields": [
+		{
+			"name": "fullName",
+			"type": "string"
+		},
+		{
+			"name": "maritalStatus",
+			"type": "string",
+			"default": "UNKNOWN"
+		},
+		{
+			"name": "active",
+			"type": "boolean",
+			"default": false
+		}
+	]
+}
