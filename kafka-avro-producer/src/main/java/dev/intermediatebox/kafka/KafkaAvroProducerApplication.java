@@ -25,8 +25,8 @@ public class KafkaAvroProducerApplication implements CommandLineRunner {
 //	@Autowired
 //	private Avro01Producer avro01Producer;
 
-	@Autowired
-	private Avro02Producer avro02Producer;
+//	@Autowired
+//	private Avro02Producer avro02Producer;
 
 	@Override
 	public void run(String... args) throws Exception {
@@ -35,10 +35,10 @@ public class KafkaAvroProducerApplication implements CommandLineRunner {
 //
 //		avro01Producer.send(data);
 
-		var data = Avro02.newBuilder().setMyDecimal(ByteBuffer.wrap(new byte[10]))
-				.setMyUUID(UUID.randomUUID().toString()).setMyDate(LocalDate.of(2022, 7, 2))
-				.setMyTimeMillis(LocalTime.now()).setMyTimestampMillis(Instant.now()).build();
-
-		avro02Producer.send(data);
+//		var data = Avro02.newBuilder().setMyDecimal(ByteBuffer.wrap(new byte[10]))
+//				.setMyUUID(UUID.randomUUID().toString()).setMyDate(LocalDate.of(2022, 7, 2))
+//				.setMyTimeMillis(LocalTime.now()).setMyTimestampMillis(Instant.now()).build();
+//
+//		avro02Producer.send(data);
 	}
 }

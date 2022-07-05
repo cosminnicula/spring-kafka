@@ -1,0 +1,18 @@
+{
+	"type": "record",
+	"namespace": "dev.intermediatebox.avro.data",
+	"name": "Hello",
+	"doc": "Hello world avro",
+	"fields": [
+		{
+			"name": "myStringField",
+			"type": "string",
+			"doc": "Just a string"
+		},
+		{
+			"name": "myIntField",
+			"type": "int",
+			"doc": "Just an int"
+		}
+	]
+}

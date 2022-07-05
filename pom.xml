@@ -41,6 +41,8 @@
 
     <module>kafka-avro-producer</module>
     <module>kafka-avro-consumer</module>
+
+    <module>kafka-ksqldb</module>
   </modules>
 
   <dependencies>
@@ -84,6 +86,10 @@
     <repository>
       <id>confluent</id>
       <url>https://packages.confluent.io/maven/</url>
+    </repository>
+    <repository>
+      <id>confluent2</id>
+      <url>https://ksqldb-maven.s3.amazonaws.com/maven/</url>
     </repository>
   </repositories>
 </project>

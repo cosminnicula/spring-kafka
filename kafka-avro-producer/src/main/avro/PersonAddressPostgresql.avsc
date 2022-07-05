@@ -1,0 +1,39 @@
+{
+  "type" : "record",
+  "name" : "PersonAddressPostgresql",
+  "namespace" : "dev.intermediatebox.avro.data",
+  "fields" : [ {
+    "name" : "person_id",
+    "type" : [ "null", "string" ],
+    "default" : null
+  }, {
+    "name" : "id_card_number",
+    "type" : [ "null", "string" ],
+    "default" : null
+  }, {
+    "name" : "full_name",
+    "type" : [ "null", "string" ],
+    "default" : null
+  }, {
+    "name" : "email",
+    "type" : [ "null", "string" ],
+    "default" : null
+  }, {
+    "name" : "address_id",
+    "type" : [ "null", "string" ],
+    "default" : null
+  }, {
+    "name" : "address",
+    "type" : [ "null", "string" ],
+    "default" : null
+  }, {
+    "name" : "city",
+    "type" : [ "null", "string" ],
+    "default" : null
+  }, {
+    "name" : "postal_code",
+    "type" : [ "null", "string" ],
+    "default" : null
+  } ],
+  "connect.name" : "com.course.avro.data.PersonAddressPostgresql"
+}

@@ -973,7 +973,702 @@ See Avro02Producer
 Run kafka-avro-producer spring application
 kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic sc-avro02 --property print.key=true
 
-3.
+3.Kafka Avro and Kafka Stream
 
+kafka-topics.sh --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic sc-hello
+Create schema for Hello.avsc
+
+See KafkaStreamConfig, HelloProducer, HelloPositiveUppercase, HelloStream
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic sc-hello --property print.key=true
+Run kafka-avro-producer and kafka-avro-consumer spring applications
+
+4.Backward compatibility (occurs when consumer is updated first - e.g. v2, but the producer is not updated - e.g. v1)
+
+In real life there is not V1, or V2 of the .avsc file (e.g. instead of EmployeeBackwardV1.avsc and EmployeeBackwardV2.avsc, there's only one EmployeeBackward.avsc)
+
+kafka-topics.sh --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic sc-employee-backward
+Create schema for EmployeeBackward.avsc (Postman)
+Check compatibility in Conduktor UI (set Compatibility to "Backward")
+See EmployeeBackwardProducer, EmployeeBackwardScheduler, EmployeeBackwardConsumer
+Run kafka-avro-producer and kafka-avro-consumer spring applications
+
+Now, in the kafka-avro-consumer project, copy the content of EmployeeBackwardV2.avsc into EmployeeBackward.avsc
+Note: the consumer will automatically increment the version of the schema in the Registry (or you can manually update the version of the schema via Conduktor UI)
+Run Maven compile to regenerate EmployeeBackward java class and run kafka-avro-producer and kafka-avro-consumer spring applications
+
+5.Forward compatibility (occurs when producer is updated first - e.g. v2, but the consumer is not updated - e.g. v1)
+
+kafka-topics.sh --bootstrap-server localhost:9092 --create --partitions 1 --replication-factor 1 --topic sc-employee-forward
+Create schema for EmployeeForward.avsc (Postman)
+Check compatibility in Conduktor UI (set Compatibility to "Forward")
+See EmployeeForwardProducer, EmployeeForwardScheduler, EmployeeForwardConsumer
+Run kafka-avro-producer and kafka-avro-consumer spring applications
+
+Now, in the kafka-avro-producer project, copy the content of EmployeeForwardV2.avsc into EmployeeForward.avsc
+Note: the consumer will automatically increment the version of the schema in the Registry (or you can manually update the version of the schema via Conduktor UI)
+Run Maven compile to regenerate EmployeeForward java class
+Modify EmployeeForwardScheduler to send dummy email data (the consumer will ignore this field)
+Run kafka-avro-producer and kafka-avro-consumer spring applications
+
+6.Full compatibility (neither producer, nor consumer breaks when schema evolves)
+
+---
+
+Avro and Kafka Connect
+
+Note that docker-compose-full.yml has CONNECT_VALUE_CONVERTER and CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL for kafka-connect service (the schema will not be embedded in the message, as with JSON messages)
+Note: you can override each connector configuration and set the default converter
+Note: source connector automatically generates schema, which is saved on schema registry; the sink connector will read the schema from the Registry
+
+
+1.Postgresql source connector + Kafka consumer 
+
+See PersonAddressPostgresql.avsc
+Create source connector by running Postman -> Kafka Schema Registry -> Kafka Connect -> Source PostgreSQL - Person Address
+Check Conduktor -> Schema Registry -> note that a new schema "sc-person-address-postgresql-value" was automatically created
+Copy schema content from Conduktor to kafka-avro-consumer/src/main/avro/PersonAddressPostgresql.avsc
+
+See PersonAddressPostgresqlConsumer
+
+2.Kafka producer
+
+See PersonAddressPostgresqlProducer and PersonAddressScheduler
+
+3.Postgresql sink connector
+
+Create postresql table kafka_employee_forward (firstName varchar(200), lastName varchar(200), email varchar(200))
+Enable EmployeeForwardScheduler
+Create sink connector by running Postman -> Kafka Schema Registry -> Kafka Connect -> Sink PostgreSQL - Employee Forward
+
+---
+
+Kafka Confluent REST Proxy
+
+1.Various operations via REST Proxy
+List cluster ids: Postman -> Kafka Rest Proxy -> v3 -> Cluster -> List clusters
+Create topic: Postman -> Kafka Rest Proxy -> v3 -> Topic -> Create topic (my-topic-from-api-binary, my-topic-from-api-avro, my-topic-from-api-json)
+
+2.Produce and consume binary data via REST Proxy
+The following step needs to be executed in order to produce binary data:
+Produce binary data: Postman -> Kafka Rest Proxy -> v2 -> Producer -> Produce binary (the value is base64 encoded)
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic my-topic-from-api-binary --property print.key=true
+
+The following steps need to be executed in order to consume binary data:
+Consume binary data: Postman -> Kafka Rest Proxy -> v2 -> Consumer -> Consume binary -> Create consumer
+Subscribe to topic: Postman -> Kafka Rest Proxy -> v2 -> Consumer -> Consume binary -> Subscribe to topic
+Consume from topic: Postman -> Kafka Rest Proxy -> v2 -> Consumer -> Consume binary -> Consume from topic
+
+3.Produce and consume JSON data via REST Proxy
+
+Same with binary, only the content-type header is changed
+
+The following step needs to be executed in order to produce json data:
+Postman -> Kafka Rest Proxy -> v2 -> Producer -> Produce json
+
+The following steps need to be executed in order to consume json data:
+Consume json data: Postman -> Kafka Rest Proxy -> v2 -> Consumer -> Consume json -> Create consumer
+Subscribe to topic: Postman -> Kafka Rest Proxy -> v2 -> Consumer -> Consume json -> Subscribe to topic
+Consume from topic: Postman -> Kafka Rest Proxy -> v2 -> Consumer -> Consume json -> Consume from topic
+
+4.Produce and consume Avro data via REST Proxy
+
+Similar with json
+
+The following step needs to be executed in order to produce avro data:
+Postman -> Kafka Rest Proxy -> v2 -> Producer -> Produce avro 1 (has both schema and records; the schema will be automatically created)
+or
+Postman -> Kafka Rest Proxy -> v2 -> Producer -> Produce avro 1 (references previously created schema id)
+
+The following steps need to be executed in order to consume avro data:
+Consume avro data: Postman -> Kafka Rest Proxy -> v2 -> Consumer -> Consume avro -> Create consumer
+Subscribe to topic: Postman -> Kafka Rest Proxy -> v2 -> Consumer -> Consume avro -> Subscribe to topic
+Consume from topic: Postman -> Kafka Rest Proxy -> v2 -> Consumer -> Consume avro -> Consume from topic
+
+---
+
+ksqlDB
+
+docker exec -it kafka-ksqldb ksql
+Run kafka-ms-order spring application
+
+1.Hello ksqlDB stream
+
+kafka-topics --create --topic=t-commodity-promotion --partitions=1 --replication-factor=1 --bootstrap-server=localhost:9092
+Run Postman -> Microservices & Kafka Stream -> Promotion -> Create Promotion
+
+Console consumer:
+Run in kafka-ksqldb: print 't-commodity-promotion'; (it will start listening for new data)
+or
+Run in kafka-ksqldb: SET 'auto.offset.reset'='earliest'; print 't-commodity-promotion';
+or
+Run in kafka-ksqldb: print 't-commodity-promotion' from beginning;
+
+Create stream:
+CREATE STREAM `s-commodity-promotion` (
+promotionCode VARCHAR
+) WITH (
+KAFKA_TOPIC = 't-commodity-promotion',
+VALUE_FORMAT = 'JSON'
+);
+
+Read from stream:
+SELECT *
+FROM `s-commodity-promotion`
+EMIT CHANGES;
+
+Read from stream with transformation (see https://docs.ksqldb.io/en/latest/developer-guide/ksqldb-reference/functions/):
+SELECT UCASE(promotionCode) AS uppercasePromotionCode
+FROM `s-commodity-promotion`
+EMIT CHANGES;
+
+Create stream with transformation (it will create a new topic 's-commodity-promotion-uppercase'; by running SHOW TOPICS or kafka-topics.sh --list --bootstrap-server=localhost:9092, it will list the 's-commodity-promotion-uppercase' topic, which is just a normal topic)
+CREATE STREAM `s-commodity-promotion-uppercase`
+WITH (
+kafka_topic = 't-ksql-commodity-promotion-uppercase'
+)
+AS
+SELECT UCASE(promotionCode) AS uppercasePromotionCode
+FROM `s-commodity-promotion`
+EMIT CHANGES;
+
+SHOW STREAMS;
+
+Select from stream:
+SELECT *
+FROM `s-commodity-promotion-uppercase`
+EMIT CHANGES;
+
+2.Basic ksqlDB stream commands (see https://docs.ksqldb.io/en/latest/)
+
+PRINT `t-commodity-promotion`;
+SELECT * FROM `s-commodity-promotion` EMIT CHANGES;
+CREATE STREAM IF NOT EXISTS `s-commodity-promotion2`;
+CREATE OR REPLACE STREAM IF NOT EXISTS `s-commodity-promotion2`;
+DROP STREAM `s-commodity-promotion2`;
+DROP STREAM IF EXISTS `s-commodity-promotion2`;
+
+3.Primitive data types
+
+See BasicDataOne*
+Run Postman -> Kafka ksqlDB -> Basic Data -> Basic Data 1 multiple times
+
+Show data in topic:
+PRINT `t-ksql-basic-data-one`
+FROM BEGINNING;
+
+Create stream:
+CREATE STREAM `s-basic-data-one` (
+`myString` STRING,
+`myFloat` DOUBLE,
+`myBoolean` BOOLEAN,
+`myInteger` INT,
+`myDouble` DOUBLE,
+`myBigDecimal` DECIMAL(30,18),
+`myLong` BIGINT,
+`myAnotherString` VARCHAR
+)
+WITH (
+KAFKA_TOPIC = 't-ksql-basic-data-one',
+VALUE_FORMAT = 'JSON'
+);
+
+Try to update stream with different column order (it will fail):
+CREATE OR REPLACE STREAM `s-basic-data-one` (
+`myBoolean` BOOLEAN,
+`myFloat` DOUBLE,
+`myDouble` DOUBLE,
+`myInteger` INT,
+`myLong` BIGINT,
+`myString` STRING,
+`myAnotherString` VARCHAR,
+`myBigDecimal` DECIMAL(30,18)
+)
+WITH (
+KAFKA_TOPIC = 't-ksql-basic-data-one',
+VALUE_FORMAT = 'JSON'
+);
+The workaround is to delete and recreate the stream (DROP STREAM IF EXISTS `s-basic-data-one`;)
+
+Show data with limit:
+SELECT *
+FROM `s-basic-data-one`
+EMIT CHANGES
+LIMIT 15;
+
+3.Date and time data types 
+
+See BasicDataTwo*
+Run Postman -> Kafka ksqlDB -> Basic Data -> Basic Data 2 multiple times (see Postman Pre-request Script)
+
+Show data in topic:
+PRINT `t-ksql-basic-data-two`
+FROM BEGINNING;
+
+Create stream:
+CREATE OR REPLACE STREAM `s-basic-data-two` (
+`myEpochDay` DATE,
+`myMillisOfDay` TIME,
+`myEpochMillis` TIMESTAMP
+)
+WITH (
+KAFKA_TOPIC = 't-ksql-basic-data-two',
+VALUE_FORMAT = 'JSON'
+);
+
+Read data from stream:
+SELECT *
+FROM `s-basic-data-two`
+EMIT CHANGES;
+
+Date/time ksqlDB functions:
+SELECT `myEpochDay`,
+DATEADD(DAYS, 7, `myEpochDay`) AS `aWeekAfterMyEpochDay`,
+`myMillisOfDay`,
+TIMESUB(HOURS, 2, `myMillisOfDay`) AS `twoHoursBeforeMyMillisOfDay`,
+`myEpochMillis`,
+FORMAT_TIMESTAMP(`myEpochMillis`, 'dd-MMM-yyyy, HH:mm:ss Z', 'Asia/Jakarta') as `epochMillisAtJakartaTimezone`
+FROM `s-basic-data-two`
+EMIT CHANGES;
+
+4.Date and time data types (ISO 8601 format)
+
+See BasicDataThree*
+Run Postman -> Kafka ksqlDB -> Basic Data -> Basic Data 3 multiple times
+
+Show data in topic:
+PRINT `t-ksql-basic-data-three`;
+
+Create stream:
+CREATE OR REPLACE STREAM `s-basic-data-three` (
+`myLocalDate` VARCHAR,
+`myLocalDateCustomFormat` VARCHAR,
+`myLocalTime` VARCHAR,
+`myLocalTimeCustomFormat` VARCHAR,
+`myLocalDateTime` VARCHAR,
+`myLocalDateTimeCustomFormat` VARCHAR
+)
+WITH (
+KAFKA_TOPIC = 't-ksql-basic-data-three',
+VALUE_FORMAT = 'JSON'
+);
+
+Read data from stream:
+SELECT *
+FROM `s-basic-data-three`
+EMIT CHANGES;
+
+Read data (LocalDate)
+SELECT `myLocalDate`,
+DATEADD(DAYS, 7, `myLocalDate`) AS `aWeekAfterMyLocalDate`,
+CONCAT('Prefix string- ', `myLocalDate`, ' -suffix String') AS `myLocalDateConcatString`,
+`myLocalDateCustomFormat`,
+DATEADD(DAYS, 7, `myLocalDateCustomFormat`) AS `aWeekAfterMyLocalDateCustomFormat`,
+CONCAT('Prefix string- ', `myLocalDateCustomFormat`, ' -suffix String') AS `myLocalDateCustomFormatConcatString`
+FROM `s-basic-data-three`
+EMIT CHANGES;
+
+Read data (LocalTime)
+SELECT `myLocalTime`,
+TIMEADD(HOURS, 3, `myLocalTime`) AS `3HoursAfterMyLocalTime`,
+CONCAT('Prefix string- ', `myLocalTime`, ' -suffix String') AS `myLocalTimeConcatString`,
+`myLocalTimeCustomFormat`,
+TIMEADD(HOURS, 3, `myLocalTimeCustomFormat`) AS `3HoursAfterMyLocalDateCustomFormat`,
+CONCAT('Prefix string- ', `myLocalTimeCustomFormat`, ' -suffix String') AS `myLocalTimeCustomFormatConcatString`
+FROM `s-basic-data-three`
+EMIT CHANGES;
+
+Read data (LocalDateTime)
+SELECT `myLocalDateTime`,
+DATEADD(DAYS, 2, `myLocalDateTime`) AS `2DaysAfterMyLocalDateTime`,
+CONCAT('Prefix string- ', `myLocalDateTime`, ' -suffix String') AS `myLocalDateTimeConcatString`,
+`myLocalDateTimeCustomFormat`,
+DATEADD(DAYS, 2, `myLocalDateTimeCustomFormat`) AS `2DaysAfterMyLocalDateTimeCustomFormat`,
+CONCAT('Prefix string- ', `myLocalDateTimeCustomFormat`, ' -suffix String') AS `myLocalDateTimeCustomFormatConcatString`
+FROM `s-basic-data-three`
+EMIT CHANGES;
+
+Parse date/time from string:
+SELECT PARSE_DATE(`myLocalDate`, 'yyyy-MM-dd') AS `parsedLocalDate`,
+PARSE_DATE(`myLocalDateCustomFormat`, 'dd MMM yyyy') AS `parsedLocalDateCustomFormat`,
+PARSE_TIME(`myLocalTime`, 'HH:mm:ss') AS `parsedLocalTime`,
+PARSE_TIME(`myLocalTimeCustomFormat`, 'hh:mm:ss a') AS `parsedLocalTimeCustomFormat`,
+PARSE_TIMESTAMP(`myLocalDateTime`, 'yyyy-MM-dd''T''HH:mm:ss') AS `parsedLocalDateTime`,
+PARSE_TIMESTAMP(`myLocalDateTimeCustomFormat`, 'dd-MMM-yyyy hh:mm:ss a') AS `parsedLocalDateTimeCustomFormat`
+FROM `s-basic-data-three`
+EMIT CHANGES;
+
+Create stream with parsed date/time from string:
+CREATE STREAM `s-basic-data-three-parsed`
+AS
+SELECT PARSE_DATE(`myLocalDate`, 'yyyy-MM-dd') AS `parsedLocalDate`,
+PARSE_DATE(`myLocalDateCustomFormat`, 'dd MMM yyyy') AS `parsedLocalDateCustomFormat`,
+PARSE_TIME(`myLocalTime`, 'HH:mm:ss') AS `parsedLocalTime`,
+PARSE_TIME(`myLocalTimeCustomFormat`, 'hh:mm:ss a') AS `parsedLocalTimeCustomFormat`,
+PARSE_TIMESTAMP(`myLocalDateTime`, 'yyyy-MM-dd''T''HH:mm:ss') AS `parsedLocalDateTime`,
+PARSE_TIMESTAMP(`myLocalDateTimeCustomFormat`, 'dd-MMM-yyyy hh:mm:ss a') AS `parsedLocalDateTimeCustomFormat`
+FROM `s-basic-data-three`
+EMIT CHANGES;
+
+Describe stream:
+DESCRIBE `s-basic-data-three`;
+DESCRIBE `s-basic-data-three-parsed`;
+DESCRIBE `s-basic-data-three` EXTENDED;
+DESCRIBE `s-basic-data-three-parsed` EXTENDED;
+
+Correctly read data for LocalDate from parsedLocalDate column:
+SELECT `parsedLocalDate`,
+DATEADD(DAYS, 7, `parsedLocalDate`) AS `aWeekAfterParsedLocalDate`,
+`parsedLocalDateCustomFormat`,
+DATEADD(DAYS, 7, `parsedLocalDateCustomFormat`) AS `aWeekAfterParsedLocalDateCustomFormat`
+FROM `s-basic-data-three-parsed`
+EMIT CHANGES;
+
+Correctly read data for LocalTime from parsedLocalDate column:
+SELECT `parsedLocalTime`,
+TIMEADD(HOURS, 3, `parsedLocalTime`) AS `3HoursAfterParsedLocalTime`,
+`parsedLocalTimeCustomFormat`,
+TIMEADD(HOURS, 3, `parsedLocalTimeCustomFormat`) AS `3HoursAfterParsedLocalDateCustomFormat`
+FROM `s-basic-data-three-parsed`
+EMIT CHANGES;
+
+Correctly read data for LocalDateTime from parsedLocalDate column:
+SELECT `parsedLocalDateTime`,
+TIMESTAMPADD(DAYS, 2, `parsedLocalDateTime`) AS `2DaysAfterParsedLocalDateTime`,
+`parsedLocalDateTimeCustomFormat`,
+TIMESTAMPADD(DAYS, 2, `parsedLocalDateTimeCustomFormat`) AS `2DaysAfterParsedLocalDateTimeCustomFormat`
+FROM `s-basic-data-three-parsed`
+EMIT CHANGES;
+
+5.Array, List and Set data types
+
+See BasicDataFour*
+Run Postman -> Kafka ksqlDB -> Basic Data -> Basic Data 4 multiple times
+
+Show data in topic:
+PRINT `t-ksql-basic-data-four`;
+
+Create stream:
+CREATE STREAM `s-basic-data-four` (
+`myStringArray` ARRAY<VARCHAR>,
+`myIntegerList` ARRAY<INT>,
+`myDoubleSet` ARRAY<DOUBLE>
+) WITH (
+KAFKA_TOPIC = 't-ksql-basic-data-four',
+VALUE_FORMAT = 'JSON'
+);
+
+Read data from stream:
+SELECT *
+FROM `s-basic-data-four`
+EMIT CHANGES;
+
+Describe stream
+DESCRIBE `s-basic-data-four`;
+
+Array functions:
+SELECT ARRAY_LENGTH(`myStringArray`) as `lengthMyStringArray`,
+ARRAY_CONCAT(`myIntegerList`, ARRAY[999, 998, 997]) as `concatMyIntegerList`,
+ARRAY_SORT(`myDoubleSet`, 'DESC') as `sortedDescMyDoubleSet`
+FROM `s-basic-data-four`
+EMIT CHANGES;
+
+5.Map data type
+
+See BasicDataFive*
+Run Postman -> Kafka ksqlDB -> Basic Data -> Basic Data 5 multiple times
+
+Show data in topic:
+PRINT `t-ksql-basic-data-five`;
+
+Create stream:
+CREATE STREAM `s-basic-data-five` (
+`myMapAlpha` MAP<VARCHAR, VARCHAR>,
+`myMapBeta` MAP<VARCHAR, VARCHAR>
+) WITH (
+KAFKA_TOPIC = 't-ksql-basic-data-five',
+VALUE_FORMAT = 'JSON'
+);
+
+Read data from stream:
+SELECT *
+FROM `s-basic-data-five`
+EMIT CHANGES;
+
+Describe stream:
+DESCRIBE `s-basic-data-five`;
+
+Map functions:
+SELECT MAP_VALUES(`myMapAlpha`) as `valuesAtMyMapAlpha`,
+MAP_KEYS(`myMapBeta`) as `keysAtMyMapBeta`
+FROM `s-basic-data-five`
+EMIT CHANGES;
+
+6.Complex data types
+
+See BasicDataPersonRequest, BasicDataPersonMessage, BasicDataPassportMessage, BasicDataAddressMessage, BasicDataLocationMessage
+Run Postman -> Kafka ksqlDB -> Basic Data -> Basic Data Person multiple times
+
+Show data in topic:
+PRINT `t-ksql-basic-data-person` FROM BEGINNING;
+
+Create stream:
+CREATE STREAM `s-basic-data-person` (
+`firstName` VARCHAR,
+`lastName` VARCHAR,
+`birthDate` VARCHAR,
+`contacts` MAP<VARCHAR, VARCHAR>,
+`passport` STRUCT<
+`number` VARCHAR,
+`expiryDate` VARCHAR
+>,
+`addresses` ARRAY<
+STRUCT<
+`streetAddress` VARCHAR,
+`country` VARCHAR,
+`location` STRUCT<
+`latitude` DOUBLE,
+`longitude` DOUBLE
+>
+>
+>
+) WITH (
+KAFKA_TOPIC = 't-ksql-basic-data-person',
+VALUE_FORMAT = 'JSON'
+);
+
+Read data from stream:
+SELECT *
+FROM `s-basic-data-person`
+EMIT CHANGES;
+
+Access map data:
+SELECT `contacts`['email'] AS `emailFromContactsMap`,
+`contacts`['phoneHome'] AS `phoneHomeFromContactsMap`,
+`contacts`['phoneWork'] AS `phoneWorkFromContactsMap`
+FROM `s-basic-data-person`
+EMIT CHANGES;
+
+Access struct data:
+SELECT `passport`->`number` AS `passportNumber`,
+`passport`->`expiryDate` AS `passportExpiryDate`
+FROM `s-basic-data-person`
+EMIT CHANGES;
+
+Convert each address in the list into one record (explode function):
+SELECT `firstName`, `lastName`,
+EXPLODE(`addresses`) as `addressSingle`
+FROM `s-basic-data-person`
+EMIT CHANGES;
+
+Convert each address in the list into one record, then access each field in the address:
+SELECT `firstName`, `lastName`,
+EXPLODE(`addresses`)->`streetAddress`,
+EXPLODE(`addresses`)->`country`,
+EXPLODE(`addresses`)->`location`
+FROM `s-basic-data-person`
+EMIT CHANGES;
+
+Convert each address in the list into one record, then access each field in the address, including fields from structs within structs:
+SELECT `firstName`, `lastName`,
+EXPLODE(`addresses`)->`streetAddress`,
+EXPLODE(`addresses`)->`country`,
+EXPLODE(`addresses`)->`location`->`latitude` AS `latitude`,
+EXPLODE(`addresses`)->`location`->`longitude` AS `longitude`
+FROM `s-basic-data-person`
+EMIT CHANGES;
+
+
+Convert each address in the list into one record, then access each field in the address, including fields from structs within structs, and date conversion functions:
+CREATE STREAM `s-basic-data-person-complete`
+AS
+SELECT `firstName`,
+`lastName`,
+PARSE_DATE(`birthDate`, 'yyyy-MM-dd') AS `birthDate`,
+`contacts`,
+`passport`->`number` AS `passportNumber`,
+PARSE_DATE(`passport`->`expiryDate`,'yyyy-MM-dd') AS `passportExpiryDate`,		
+EXPLODE(`addresses`)->`streetAddress`,
+EXPLODE(`addresses`)->`country`,
+EXPLODE(`addresses`)->`location`->`latitude` AS `latitude`,
+EXPLODE(`addresses`)->`location`->`longitude` AS `longitude`
+FROM `s-basic-data-person`
+EMIT CHANGES;
+
+Describe stream:
+DESCRIBE `s-basic-data-person-complete`;
+
+Get data from stream:
+SELECT *
+FROM `s-basic-data-person-complete`
+EMIT CHANGES;
+
+---
+
+ksqlDB Stream and Table key (KSQL Stream and Table are similar with Kafka Stream and Table)
+
+See BasicDataCountryMessage
+Run Postman -> Kafka ksqlDB -> Stream & Table Key -> Basic Data Country multiple times
+
+Show data in topic:
+PRINT `t-ksql-basic-data-country` FROM BEGINNING;
+
+Create stream:
+CREATE STREAM `s-basic-data-country` (
+`countryName` VARCHAR,
+`currencyCode` VARCHAR,
+`population` INT
+) WITH (
+KAFKA_TOPIC = 't-ksql-basic-data-country',
+VALUE_FORMAT = 'JSON'
+);
+
+Describe stream:
+DESCRIBE `s-basic-data-country`;
+
+Get stream data:
+SELECT *
+FROM `s-basic-data-country`
+EMIT CHANGES;
+
+Re-key by country name (from existing s-basic-data-country stream):
+DROP STREAM IF EXISTS `s-basic-data-country-rekeyed`;
+
+CREATE STREAM `s-basic-data-country-rekeyed`
+AS
+SELECT `countryName`, `currencyCode`, `population`
+FROM `s-basic-data-country`
+PARTITION BY `countryName`
+EMIT CHANGES;
+
+DESCRIBE `s-basic-data-country-rekeyed`;
+
+Include key in the stream:
+DROP STREAM IF EXISTS `s-basic-data-country-rekeyed`;
+
+CREATE STREAM `s-basic-data-country-rekeyed`
+AS
+SELECT `countryName` AS `rowkey`, AS_VALUE(`countryName`) AS `countryName`, `currencyCode`, `population`
+FROM `s-basic-data-country`
+PARTITION BY `countryName`
+EMIT CHANGES;
+
+Get data from stream:
+SET 'auto.offset.reset'='earliest';
+
+SELECT *
+FROM `s-basic-data-country-rekeyed`
+EMIT CHANGES;
+
+Re-key by country name and currency code:
+DROP STREAM IF EXISTS `s-basic-data-country-rekeyed-json`;
+
+CREATE STREAM `s-basic-data-country-rekeyed-json`
+WITH (
+KEY_FORMAT = 'JSON'
+)
+AS
+SELECT STRUCT(`countryName` := `countryName`, `currencyCode` := `currencyCode`) AS `jsonKey`,
+AS_VALUE(`countryName`) AS `countryName`,
+AS_VALUE(`currencyCode`) AS `currencyCode`,
+`population`
+FROM `s-basic-data-country`
+PARTITION BY STRUCT(`countryName` := `countryName`, `currencyCode` := `currencyCode`)
+EMIT CHANGES;
+
+Create table with key = country name and sum(population) (Table is an aggregation of stream with group by)
+DROP TABLE IF EXISTS `tbl-basic-data-country`;
+
+CREATE TABLE `tbl-basic-data-country`
+AS
+SELECT `countryName`, SUM(`population`) AS `totalPopulation`
+FROM `s-basic-data-country`
+GROUP BY `countryName`
+EMIT CHANGES;
+
+Run Postman -> Kafka ksqlDB -> Stream & Table Key -> Table Simulation requests
+Note: 07 - Null key (no country name) is still publishing to the underlying topic, however, it's not published to table
+Note: 09 - Japan Delete sends a tombstone record (nothing happened on the topic, while in the Table, a tombstone value was created); re-running "SELECT * FROM `tbl-basic-data-country`" will only display "Indonesia" records
+
+Get data from table:
+SET 'auto.offset.reset'='earliest';
+
+SELECT *
+FROM `tbl-basic-data-country`
+EMIT CHANGES;
+
+---
+
+ksqlDB Commodity
+
+Create stream:
+CREATE STREAM `s-commodity-order` (
+`rowkey` VARCHAR KEY,
+`creditCardNumber` VARCHAR,
+`itemName` VARCHAR,
+`orderDateTime` VARCHAR,
+`orderLocation` VARCHAR,
+`orderNumber` VARCHAR,
+`price` INT,
+`quantity` INT
+) WITH (
+KAFKA_TOPIC = 't-commodity-order',
+VALUE_FORMAT = 'JSON'
+);
+
+Describe stream
+DESCRIBE `s-commodity-order`;
+
+Run Postman -> Microservices & Kafka Stream -> Commodity Order -> Order 1 Random Item 
+
+Get data from topic:
+PRINT `t-commodity-order` FROM BEGINNING;
+Note: the PRINT statement is not reliable (e.g. "Key format: KAFKA_BIGINT or KAFKA_DOUBLE or KAFKA_STRING")
+
+Mask credit card number
+CREATE STREAM `s-commodity-order-masked`
+AS
+SELECT `rowkey`, MASK_LEFT(`creditCardNumber`, 12, '*', '*', '*', '*') AS `maskedCreditCardNumber`,
+`itemName`, `orderDateTime`, `orderLocation`, `orderNumber`, `price`, `quantity`
+FROM `s-commodity-order`
+EMIT CHANGES;
+
+Get data from stream:
+SELECT *
+FROM `s-commodity-order-masked`
+EMIT CHANGES;
+
+Calculate total item amount to pattern output
+CREATE STREAM `s-commodity-pattern-one`
+AS
+SELECT `rowkey`, `itemName`, `orderDateTime`, `orderLocation`, `orderNumber`,
+(`price` * `quantity`) as `totalItemAmount`
+FROM `s-commodity-order-masked`
+EMIT CHANGES;
+
+Get data from stream:
+SELECT *
+FROM `s-commodity-pattern-one`
+EMIT CHANGES;
+
+Filter stream based on quantity:
+CREATE STREAM `s-commodity-reward-one`
+AS
+SELECT `rowkey`, `itemName`, `orderDateTime`, `orderLocation`,
+`orderNumber`, `price`, `quantity`
+FROM `s-commodity-order-masked`
+WHERE `quantity` > 200
+EMIT CHANGES;
+
+Storage sink:
+CREATE STREAM `s-commodity-storage-one`
+AS
+SELECT *
+FROM `s-commodity-order-masked`
+EMIT CHANGES;
+
+Select from stream:
+SELECT *
+FROM `s-commodity-reward-one`
+EMIT CHANGES;
 
 Credits to Udemy/Java Spring & Apache Kafka Bootcamp - Basic to Complete
