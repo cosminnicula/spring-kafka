@@ -1770,4 +1770,17 @@ execute script by running: RUN SCRIPT /data/scripts/commodity-sample.ksql;
 
 SHOW STREAMS;
 
+8.Filter locations starting with C (see Kafka Stream - Commodity -> 6.)
+
+CREATE OR REPLACE STREAM `s-commodity-fraud-six`
+AS
+SELECT CONCAT( SUBSTRING(`orderLocation`, 1, 1), '***' ) as `key`,
+(`price` * `quantity`) as `totalValue`
+FROM `s-commodity-order-masked`
+WHERE LCASE(`orderLocation`) LIKE 'c%'
+PARTITION BY CONCAT( SUBSTRING(`orderLocation`, 1, 1), '***' )
+EMIT CHANGES;
+
+kafka-console-consumer --topic s-commodity-fraud-six --from-beginning --property print.key=true --property value.deserializer=org.apache.kafka.common.serialization.IntegerDeserializer --bootstrap-server=localhost:9092
+
 Credits to Udemy/Java Spring & Apache Kafka Bootcamp - Basic to Complete
