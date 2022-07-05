@@ -1783,4 +1783,42 @@ EMIT CHANGES;
 
 kafka-console-consumer --topic s-commodity-fraud-six --from-beginning --property print.key=true --property value.deserializer=org.apache.kafka.common.serialization.IntegerDeserializer --bootstrap-server=localhost:9092
 
+---
+
+ksqlDB REST API - Feedback
+
+1.Basic operations (create stream, describe stream, get data from stream)
+Run Postman -> Kafka ksqlDB -> Feedback -> Are We Good Enough?
+
+Note: running 07 - Push query word stream in Postman, will return an empty response because Postman does not support streaming; the alternative is to run the ksql "SELECT * FROM `s-commodity-feedback-word` EMIT CHANGES;" in terminal, or to run the curl command in terminal
+
+Run Postman -> Microservices & Kafka Stream -> Feedback -> Create Random Feedback
+
+2.Who owns the feedback (change key to location)
+
+Run Postman -> Kafka ksqlDB -> Feedback -> Who Owns This Feedback?
+Run Postman -> Microservices & Kafka Stream -> Feedback -> Create good feedback
+
+3.Good feedback/bad feedback
+
+Run Postman -> Kafka ksqlDB -> Feedback -> Good Feedback or Bad Feedback?
+Run Postman -> Microservices & Kafka Stream -> Feedback -> Create bad feedback
+
+4.Group using Table
+
+Run Postman -> Kafka ksqlDB -> Feedback -> Group Using Table
+Run Postman -> Microservices & Kafka Stream -> Feedback -> Create good feedback
+Run Postman -> Microservices & Kafka Stream -> Feedback -> Create bad feedback
+
+5.Send and continue
+
+streams.to and streams.through have equivalents of "CREATE STREAM" and "CREATE TABLE"
+
+6.Overall good or bad count
+
+Run Postman -> Kafka ksqlDB -> Feedback -> Overall Good or Bad Word
+Run Postman -> Microservices & Kafka Stream -> Feedback -> Create good feedback
+Run Postman -> Microservices & Kafka Stream -> Feedback -> Create bad feedback
+Run Postman -> Microservices & Kafka Stream -> Feedback -> Create random feedback
+
 Credits to Udemy/Java Spring & Apache Kafka Bootcamp - Basic to Complete
