@@ -153,7 +153,7 @@ kafka-console-consumer --topic t-commodity-storage-one --from-beginning --proper
 Run kafka-ms-order, kafka-stream-sample
 Run Postman -> Commodity Order collection (Order 1 Random Item, Order 2 Random Item, Order 3 Random Item) -> 1000 times, 1000 delay
 
-3.a.Topology changes (see kafka-stream-commodity-topology-3.jpg): split t-commodity-pattern stream into two categories: plastic and non-plastic items; t-commodity-reward -> give reward only for item that is not cheap; t-commodity-order -> kye is base64
+3.a.Topology changes (see kafka-stream-commodity-topology-3.jpg): split t-commodity-pattern stream into two categories: plastic and non-plastic items; t-commodity-reward -> give reward only for item that is not cheap; t-commodity-order -> key is base64
 
 See CommodityTwoStream
 
@@ -1600,6 +1600,7 @@ EMIT CHANGES;
 
 ksqlDB Commodity
 
+1.Commodity stream + KSQL rowkey
 Create stream:
 CREATE STREAM `s-commodity-order` (
 `rowkey` VARCHAR KEY,
@@ -1670,5 +1671,103 @@ Select from stream:
 SELECT *
 FROM `s-commodity-reward-one`
 EMIT CHANGES;
+
+2.Custom rowkey from value
+
+CREATE STREAM `s-commodity-order-key-from-value` (
+`creditCardNumber` VARCHAR,
+`itemName` VARCHAR,
+`orderDateTime` VARCHAR,
+`orderLocation` VARCHAR,
+`orderNumber` VARCHAR KEY,
+`price` INT,
+`quantity` INT
+) WITH (
+KAFKA_TOPIC = 't-commodity-order',
+VALUE_FORMAT = 'JSON'
+);
+
+Describe stream:
+DESCRIBE `s-commodity-order-key-from-value`;
+
+3.Commodity plastic/non-plastic (see Kafka Stream - Commodity -> 3.a.)
+
+Create stream for plastic items
+CREATE OR REPLACE STREAM `s-commodity-pattern-two-plastic`
+AS
+SELECT `rowkey`, `itemName`, `orderDateTime`, `orderLocation`,
+`orderNumber`, (`price` * `quantity`) as `totalItemAmount`
+FROM `s-commodity-order-masked`
+WHERE LCASE(`itemName`) LIKE 'plastic%'
+EMIT CHANGES;
+
+SELECT *
+FROM `s-commodity-pattern-two-plastic`
+EMIT CHANGES;
+
+CREATE OR REPLACE STREAM `s-commodity-pattern-two-notplastic`
+AS
+SELECT `rowkey`, `itemName`, `orderDateTime`, `orderLocation`,
+`orderNumber`, (`price` * `quantity`) as `totalItemAmount`
+FROM `s-commodity-order-masked`
+WHERE LCASE(`itemName`) NOT LIKE 'plastic%'
+EMIT CHANGES;
+
+SELECT *
+FROM `s-commodity-pattern-two-notplastic`
+EMIT CHANGES;
+
+4.Commodity reward (see Kafka Stream - Commodity -> t-commodity-reward-two)
+
+Create stream for large & not cheap items
+CREATE OR REPLACE STREAM `s-commodity-reward-two`
+AS
+SELECT `rowkey`, `itemName`, `orderDateTime`, `orderLocation`,
+`orderNumber`, `price`, `quantity`
+FROM `s-commodity-order-masked`
+WHERE `quantity` > 200
+AND `price` > 100
+EMIT CHANGES;
+
+5.Commodity reward (see Kafka Stream - Commodity -> t-commodity-storage-two)
+
+Replace key for storage
+CREATE OR REPLACE STREAM `s-commodity-storage-two`
+AS
+SELECT FROM_BYTES(
+TO_BYTES(`orderNumber`, 'utf8'), 'base64'
+) AS `base64Rowkey`,
+`itemName`, `orderDateTime`, `orderLocation`,
+`orderNumber`, `price`, `quantity`
+FROM `s-commodity-order-masked`
+PARTITION BY FROM_BYTES(
+TO_BYTES(`orderNumber`, 'utf8'), 'base64'
+)
+EMIT CHANGES;
+
+Describe stream  
+DESCRIBE `s-commodity-storage-two`;
+Note that base64Rowkey column is marked as key
+or
+Use console consumer to see the key
+kafka-console-consumer --topic t-commodity-storage-two --from-beginning --property print.key=true --bootstrap-server=localhost:9092
+
+6.Commodity reward for each location (see Kafka Stream - Commodity -> 4. -> the key of the OrderReward needs to be changed and become the location)
+
+CREATE OR REPLACE STREAM `s-commodity-reward-four`
+AS
+SELECT `itemName`, `orderDateTime`, `orderLocation`,
+`orderNumber`, `price`, `quantity`
+FROM `s-commodity-order-masked`
+PARTITION BY `orderLocation`
+EMIT CHANGES;
+
+7.KSQL scripts
+
+copy spring-kafka-scripts/ksqldb-samples/scripts/commodity-sample.ksql to ./data/kafka-ksqldb-data/scripts
+
+execute script by running: RUN SCRIPT /data/scripts/commodity-sample.ksql;
+
+SHOW STREAMS;
 
 Credits to Udemy/Java Spring & Apache Kafka Bootcamp - Basic to Complete
