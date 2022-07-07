@@ -3002,5 +3002,256 @@ FROM `s-commodity-loan-payment-latency`
 GROUP BY `loanNumber`
 EMIT CHANGES;
 
+---
+
+ksqlDB - Schema Registry
+
+See docker-compose-full.yml -> kafka-ksqldb -> KSQL_KSQL_SCHEMA_REGISTRY_URL
+
+1.Create stream from topic which has associated Avro schema
+
+Run Postman -> Kafka ksqlDB -> Schema Registry -> Avro01 -> Create topic sc-avro01
+Run Postman -> Kafka ksqlDB -> Schema Registry -> Avro01 -> Create subject sc-avro01
+
+CREATE STREAM `s-avro01`
+WITH (
+KAFKA_TOPIC = 'sc-avro01',
+VALUE_FORMAT = 'AVRO'
+);
+Note that for s-avro01, there are no columns defined and the value format is AVRO
+
+DESCRIBE `s-avro01`;
+Note that the columns are all uppercase
+
+Run kafka-avro-producer spring project and check the stream data: SELECT * FROM `s-avro01` EMIT CHANGES;
+
+2.Automatically created schema
+
+CREATE STREAM `s-avro-member` (
+`email` VARCHAR,
+`username` VARCHAR,
+`birthDate` VARCHAR,
+`membership` VARCHAR
+)
+WITH (
+KAFKA_TOPIC = 'sc-avro-member',
+PARTITIONS = 1,
+VALUE_FORMAT = 'AVRO'
+);
+
+When creating the stream using Avro, it will also create Registry Schema subject automatically
+Run to see the automatically created schema: Postman -> Kafka Schema Registry -> Schema -> List schemas
+
+Insert data
+INSERT INTO `s-avro-member` (
+`email`,
+`username`,
+`birthDate`,
+`membership`
+) VALUES (
+'thor@asgard.com',
+'god_of_thunder',
+'1900-05-19',
+'black'
+);
+
+INSERT INTO `s-avro-member` (
+`email`,
+`username`,
+`birthDate`,
+`membership`
+) VALUES (
+'loki@asgard.com',
+'iamloki',
+'1914-11-05',
+'black'
+);
+
+INSERT INTO `s-avro-member` (
+`email`,
+`username`,
+`birthDate`,
+`membership`
+) VALUES (
+'kang@universe.com',
+'kang.the.conqueror',
+'1912-10-05',
+'white'
+);
+
+INSERT INTO `s-avro-member` (
+`email`,
+`username`,
+`birthDate`,
+`membership`
+) VALUES (
+'zeus@olympus.com',
+'therealgodofthunder',
+'1852-01-05',
+'white'
+);
+
+INSERT INTO `s-avro-member` (
+`email`,
+`username`,
+`birthDate`,
+`membership`
+) VALUES (
+'athena@olympus.com',
+'prettybutdeadly',
+'1922-08-25',
+'blue'
+);
+
+When creating a stream from stream, the schema is also automatically generated when using  VALUE_FORMAT = 'AVRO'
+CREATE STREAM `s-avro-member-black`
+WITH (
+VALUE_FORMAT = 'AVRO'
+)
+AS
+SELECT *
+FROM `s-avro-member`
+WHERE LCASE(`membership`) = 'black';
+
+DESCRIBE `s-avro-member-black`
+
+When creating a table from stream, the schema is also automatically generated when using  VALUE_FORMAT = 'AVRO'
+CREATE TABLE `tbl-avro-member-count`
+WITH (
+VALUE_FORMAT = 'AVRO'
+)
+AS
+SELECT `membership`, COUNT(`email`) AS `countMember`
+FROM `s-avro-member`
+GROUP BY `membership`
+EMIT CHANGES;
+
+DESCRIBE `tbl-avro-member-count`;
+
+3.Avro-JSON conversion
+
+Running console-consumer on s-avro-member will display base64 encoded characters
+Create a stream with VALUE_FORMAT = 'JSON' from existing Avro stream will solve the problem
+CREATE STREAM `s-avro-member-json`
+WITH (
+VALUE_FORMAT = 'JSON'    
+)
+AS
+SELECT *
+FROM `s-avro-member`
+EMIT CHANGES;
+
+INSERT INTO `s-avro-member` (
+`email`,
+`username`,
+`birthDate`,
+`membership`
+) VALUES (
+'kara@dc.com',
+'supergirl',
+'1993-11-05',
+'black'
+);
+
+Run again the console-consumer, but this time on s-avro-member-json stream, will output json values
+
+4.JSON-Avro conversion
+
+CREATE STREAM `s-power-json` (
+`power` VARCHAR,
+`level` INT
+) WITH (
+VALUE_FORMAT = 'JSON',
+KAFKA_TOPIC = 't-power-json',
+PARTITIONS = 1
+);
+
+Insert data
+INSERT INTO `s-power-json` (
+`power`,
+`level`
+) VALUES (
+'healing',
+6
+);
+
+INSERT INTO `s-power-json` (
+`power`,
+`level`
+) VALUES (
+'energy projection',
+8
+);
+
+INSERT INTO `s-power-json` (
+`power`,
+`level`
+) VALUES (
+'mind control',
+7
+);
+
+Run console-consumer on topic t-power-json and see that the data is in json format
+
+Create avro stream
+CREATE STREAM `s-power-avro`
+WITH (
+VALUE_FORMAT = 'AVRO'
+)
+AS
+SELECT *
+FROM `s-power-json`
+EMIT CHANGES;
+
+---
+
+ksqlDB and Kafka Connect
+
+See docker-compose-full.yml -> kafka-ksqldb -> KSQL_KSQL_CONNECT_URL
+
+Run in ksqlDB console:
+SHOW CONNECTORS;
+
+DESCRIBE CONNECTOR `source-spooldir-csv`;
+
+create source connector
+CREATE SOURCE CONNECTOR `source-spooldir-dummy-csv`
+WITH (
+'connector.class'='com.github.jcustenborder.kafka.connect.spooldir.SpoolDirCsvSourceConnector',
+'topic'='t-spooldir-csv-demo',
+'input.file.pattern'='dummy-.*.csv',
+'input.path'='/data/inputs',
+'error.path'='/data/errors',
+'finished.path'='/data/processed',
+'schema.generation.enabled'='true',
+'csv.first.row.as.header'='true',
+'empty.poll.wait.ms'='10000'
+);
+
+create sink connector
+CREATE SINK CONNECTOR `sink-postgresql-dummy-csv`
+WITH (
+'connector.class'='io.confluent.connect.jdbc.JdbcSinkConnector',
+'topics'='t-spooldir-csv-demo',
+'confluent.topic.bootstrap.servers'='192.168.0.9:9092',
+'connection.url'='jdbc:postgresql://192.168.0.9:5432/postgres',
+'connection.user'='postgres',
+'connection.password'='postgres',
+'table.name.format'='kafka_employees',
+'auto.create'=true,
+'auto.evolve'=true,
+'pk.mode'='record_value',
+'pk.fields'='employee_id',
+'insert.mode'='upsert'
+);
+
+Drop connectors
+DROP CONNECTOR IF EXISTS `source-spooldir-dummy-csv`;
+
+DROP CONNECTOR IF EXISTS `sink-postgresql-dummy-csv`;
+
+---
+
+ksqlDB Java Client - see BasicJavaClient
 
 Credits to Udemy/Java Spring & Apache Kafka Bootcamp - Basic to Complete
