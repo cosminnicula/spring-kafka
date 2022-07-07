@@ -43,6 +43,8 @@
     <module>kafka-avro-consumer</module>
 
     <module>kafka-ksqldb</module>
+
+    <module>kafka-ksqldb-udf</module>
   </modules>
 
   <dependencies>

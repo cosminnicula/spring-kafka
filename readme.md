@@ -1821,4 +1821,1186 @@ Run Postman -> Microservices & Kafka Stream -> Feedback -> Create good feedback
 Run Postman -> Microservices & Kafka Stream -> Feedback -> Create bad feedback
 Run Postman -> Microservices & Kafka Stream -> Feedback -> Create random feedback
 
+---
+
+ksqlDB - insert data
+
+1.Insert simple data
+Insert basic data one
+INSERT INTO `s-basic-data-one` (
+`myBoolean`,
+`myString`,
+`myAnotherString`,
+`myFloat`,
+`myDouble`,
+`myBigDecimal`,
+`myInteger`,
+`myLong`
+) VALUES (
+false,
+'This is a string',
+'And this is another string',
+52.918,
+58290.581047,
+4421672.5001855,
+1057,
+2900175
+);
+
+Insert basic data two
+INSERT INTO `s-basic-data-two` (
+`myEpochDay`,
+`myMillisOfDay`,
+`myEpochMillis`
+) VALUES (
+FROM_DAYS(20967),
+PARSE_TIME('18:47:15', 'HH:mm:ss'),
+FROM_UNIXTIME(1678610274295)
+);
+
+Insert basic data three
+INSERT INTO `s-basic-data-three` (
+`myLocalDate`,
+`myLocalTime`,
+`myLocalDateTime`,
+`myLocalDateCustomFormat`,
+`myLocalTimeCustomFormat`,
+`myLocalDateTimeCustomFormat`
+) VALUES (
+'2024-03-07',
+'16:52:09',
+'2028-11-26T19:44:16',
+'27 Aug 2024',
+'02:55:17 PM',
+'19-Dec-2026 05:42:53 AM'
+);
+
+Insert basic data four (array of string)
+INSERT INTO `s-basic-data-four` (
+`myStringArray`
+) VALUES (
+ARRAY[
+'Hello',
+'from',
+'ksqldb',
+'I hope you like it',
+'and enjoy the course'
+]
+);
+
+Insert basic data four (list of integer)
+INSERT INTO `s-basic-data-four` (
+`myIntegerList`
+) VALUES (
+ARRAY[
+1001, 1002, 1003, 1004, 1005, 1006
+]
+);
+
+Insert basic data four (set of double)
+INSERT INTO `s-basic-data-four` (
+`myDoubleSet`
+) VALUES (
+ARRAY[
+582.59, 1964.094, 287.296, 7933.04, 332.694
+]
+);
+
+Insert basic data five (1)
+INSERT INTO `s-basic-data-five` (
+`myMapAlpha`
+) VALUES (
+MAP(
+'973' := 'nine seven three',
+'628' := 'six two eight',
+'510' := 'five one zero'
+)
+);
+
+Insert basic data five (2)
+INSERT INTO `s-basic-data-five` (
+`myMapAlpha`,
+`myMapBeta`  
+) VALUES (
+MAP(
+'409' := 'four zero nine',
+'152' := 'one five two',
+'736' := 'seven three six',
+'827' := 'eight two seven'    
+),
+MAP(
+'d2c1b963-c18c-4c6e-b85f-3ebc44b93cec' := 'The first element',
+'4edf4394-fd33-4643-9ed8-f3354fe96c28' := 'The second element',
+'720ecc9e-c81f-4fac-a4d5-752c1d3f3f4f' := 'The third element'
+)
+);
+
+Insert person
+INSERT INTO `s-basic-data-person` (
+`firstName`,
+`lastName`,
+`birthDate`,
+`contacts`,
+`passport`,
+`addresses`
+) VALUES (
+'Kate',
+'Bishop',
+'2002-11-25',
+MAP(
+'email' := 'kate.bishop@marvel.com',
+'phone' := '999888777'
+),
+STRUCT(
+`number` := 'MCU-PASS-957287759',
+`expiryDate` := '2029-08-18'
+),
+ARRAY[
+STRUCT(
+`streetAddress` := 'Somewhere in New York',
+`country` := 'USA',
+`location` := STRUCT(
+`latitude` := 40.830063426849705,
+`longitude` := -74.14751581646931
+)
+),
+STRUCT(
+`streetAddress` := 'Tokyo, just there',
+`country` := 'Japan',
+`location` := STRUCT(
+`latitude` := 35.734078460795104,
+`longitude` := 139.62821562631277
+)
+)
+]
+);
+
+Note: update is not available in Kafka, nor in ksqlDB
+Note: delete single record is not available in Kafka, nor in ksqlDB; the only way to delete data is to delete topic (e.g. DROP STREAM `my-stream` DELETE TOPIC)
+
+2.Insert stream to other stream / merge multiple streams into one stream (see ksqldb-merge-streams.jpg and Kafka Stream - Customer -> 1.)
+
+Create stream from topic mobile
+CREATE STREAM `s-commodity-customer-purchase-mobile`(
+`	purchaseNumber` VARCHAR,
+`purchaseAmount` INT,
+`mobileAppVersion` VARCHAR,
+`operatingSystem` VARCHAR,
+`location` STRUCT<
+`latitude` DOUBLE,
+`longitude` DOUBLE
+>
+) WITH (
+KAFKA_TOPIC = 't-commodity-customer-purchase-mobile',
+VALUE_FORMAT = 'JSON'
+);
+
+Create stream from topic web
+CREATE STREAM `s-commodity-customer-purchase-web`(
+`purchaseNumber` VARCHAR,
+`purchaseAmount` INT,
+`browser` VARCHAR,
+`operatingSystem` VARCHAR
+) WITH (
+KAFKA_TOPIC = 't-commodity-customer-purchase-web',
+VALUE_FORMAT = 'JSON'
+);
+
+Create merged stream from topic mobile + web
+CREATE STREAM `s-commodity-customer-purchase-all` (
+`purchaseNumber` VARCHAR,
+`purchaseAmount` INT,
+`mobileAppVersion` VARCHAR,
+`operatingSystem` VARCHAR,
+`location` STRUCT<
+`latitude` DOUBLE,
+`longitude` DOUBLE
+>,
+`browser` VARCHAR,
+`source` VARCHAR
+) WITH (
+KAFKA_TOPIC = 't-ksql-commodity-customer-purchase-all',
+PARTITIONS = 2,
+VALUE_FORMAT = 'JSON'
+);
+
+INSERT INTO `s-commodity-customer-purchase-all`
+SELECT `purchaseNumber`,
+`purchaseAmount`,
+`mobileAppVersion`,
+`operatingSystem`,
+`location`,
+CAST(null AS VARCHAR) AS `browser`,
+'mobile' AS `source`
+FROM `s-commodity-customer-purchase-mobile`
+EMIT CHANGES;
+
+Insert into merged from stream web
+INSERT INTO `s-commodity-customer-purchase-all`
+SELECT `purchaseNumber`,
+`purchaseAmount`,
+CAST(null AS VARCHAR) AS `mobileAppVersion`,
+`operatingSystem`,
+CAST(null AS STRUCT<`latitude` DOUBLE, `longitude` DOUBLE>) AS `location`,
+`browser`,
+'web' AS `source`
+FROM `s-commodity-customer-purchase-web`
+EMIT CHANGES;
+
+SELECT *
+FROM `s-commodity-customer-purchase-all`
+EMIT CHANGES;
+
+Run Postman -> Microservices & Kafka Stream - Customer Purchase
+
+3.Table and cogroup (see Kafka Stream - Customer -> 2.)
+
+Create stream from topic shopping cart
+CREATE STREAM `s-commodity-customer-preference-shopping-cart`(
+`customerId` VARCHAR,
+`itemName` VARCHAR,
+`cartAmount` INT,
+`cartDatetime` VARCHAR
+) WITH (
+KAFKA_TOPIC = 't-commodity-customer-preference-shopping-cart',
+VALUE_FORMAT = 'JSON'
+);
+
+Create stream from topic wishlist
+CREATE STREAM `s-commodity-customer-preference-wishlist`(
+`customerId` VARCHAR,
+`itemName` VARCHAR,
+`wishlistDatetime` VARCHAR
+) WITH (
+KAFKA_TOPIC = 't-commodity-customer-preference-wishlist',
+VALUE_FORMAT = 'JSON'
+);
+
+Create cogroup stream, taking latest cart date time for each item
+CREATE TABLE `tbl-commodity-customer-cogroup-shopping-cart`
+WITH (
+KEY_FORMAT = 'JSON'
+)
+AS
+SELECT `customerId`, `itemName`,
+ARRAY_MAX(
+COLLECT_LIST(`cartDatetime`)
+) AS `latestCartDatetime`
+FROM `s-commodity-customer-preference-shopping-cart`
+GROUP BY `customerId`, `itemName`
+EMIT CHANGES;
+
+Note: the key contains 2 fields (customerId and itemName), thus the KEY_FORMAT needs to be 'JSON'
+
+Run Postman -> Kafka ksqlDB -> Customer Preference -> Cart & Wishlist Simulation
+
+Create map of <item name, latest add to cart datetime>
+CREATE TABLE `tbl-commodity-customer-preference-shopping-cart`
+AS
+SELECT `customerId`, AS_MAP ( COLLECT_LIST(`itemName`), COLLECT_LIST(`latestCartDatetime`)) AS `cartItems`
+FROM `tbl-commodity-customer-cogroup-shopping-cart`
+GROUP BY `customerId`
+EMIT CHANGES;
+
+Run Postman -> Kafka ksqlDB -> Customer Preference -> Cart & Wishlist Simulation (starting with 01)
+
+SELECT *
+FROM `tbl-commodity-customer-preference-shopping-cart`
+EMIT CHANGES;
+
+Create cogroup stream, taking latest wishlist date time for each item
+CREATE TABLE `tbl-commodity-customer-cogroup-wishlist`
+WITH (
+KEY_FORMAT = 'JSON'
+)
+AS
+SELECT `customerId`, `itemName`,
+ARRAY_MAX(
+COLLECT_LIST(`wishlistDatetime`)
+) AS `latestWishlistDatetime`
+FROM `s-commodity-customer-preference-wishlist`
+GROUP BY `customerId`, `itemName`
+EMIT CHANGES;
+
+Create map of <item name, latest wishlist datetime>
+CREATE TABLE `tbl-commodity-customer-preference-wishlist`
+AS
+SELECT `customerId`, AS_MAP ( COLLECT_LIST(`itemName`), COLLECT_LIST(`latestWishlistDatetime`)) AS `wishlistItems`
+FROM `tbl-commodity-customer-cogroup-wishlist`
+GROUP BY `customerId`
+EMIT CHANGES;
+
+SELECT *
+FROM `tbl-commodity-customer-preference-wishlist`
+EMIT CHANGES;
+
+Run Postman -> Kafka ksqlDB -> Customer Preference -> Cart & Wishlist Simulation (start with 06)
+
+Create merged preference from shopping cart + wishlist
+CREATE TABLE `tbl-commodity-customer-preference-all`
+AS
+SELECT `tbl-commodity-customer-preference-shopping-cart`.`customerId` AS `customerId`,
+`cartItems`,
+`wishlistItems`
+FROM `tbl-commodity-customer-preference-shopping-cart`
+JOIN `tbl-commodity-customer-preference-wishlist`
+ON `tbl-commodity-customer-preference-shopping-cart`.`customerId` = `tbl-commodity-customer-preference-wishlist`.`customerId`
+EMIT CHANGES;
+
+SELECT *
+FROM `tbl-commodity-customer-preference-all`
+EMIT CHANGES;
+
+---
+
+ksqlDB pull query
+
+For pull queries, just remove the EMIT CHANGES statement
+
+Pull query to stream (1)
+SELECT `myBoolean`, `myDouble`, `myString`
+FROM `s-basic-data-one`;
+
+Pull query to stream (2)
+SELECT *
+FROM `s-basic-data-person`;
+
+Pull query to table
+SELECT *
+FROM `tbl-commodity-customer-preference-all`
+WHERE `customerId` = 'Linda';
+
+---
+
+ksqlDB - Flash Sale
+
+1.Latest user vote (see 1.Kafka Stream - flash sale vote)
+
+Create stream from underlying topic
+CREATE STREAM `s-commodity-flashsale-vote` (
+`customerId` VARCHAR,
+`itemName` VARCHAR
+) WITH (
+KAFKA_TOPIC = 't-commodity-flashsale-vote',
+VALUE_FORMAT = 'JSON'
+);
+
+Create table to know latest user vote
+CREATE TABLE `tbl-commodity-flashsale-vote-user-item`
+AS
+SELECT `customerId`, LATEST_BY_OFFSET(`itemName`) AS `itemName`
+FROM `s-commodity-flashsale-vote`
+GROUP BY `customerId`;
+
+Create table for item and vote count, based on latest user vote
+CREATE TABLE `tbl-commodity-flashsale-vote-one-result`
+AS
+SELECT `itemName`, COUNT(`customerId`) AS `votesCount`
+FROM `tbl-commodity-flashsale-vote-user-item`
+GROUP BY `itemName`
+EMIT CHANGES;
+
+SELECT *
+FROM `tbl-commodity-flashsale-vote-one-result`
+EMIT CHANGES;
+
+Run Postman -> Microservices & Kafka Stream -> Flash Sale -> Simulation 
+
+2.Latest user vote within time range (see 2.Kafka stream state store)
+
+Create table to know latest user vote, on certain time range
+CREATE TABLE `tbl-commodity-flashsale-vote-user-item-timestamp`
+AS
+SELECT `customerId`, LATEST_BY_OFFSET(`itemName`) AS `itemName`
+FROM `s-commodity-flashsale-vote`
+WHERE rowtime >= '2022-07-06T10:00:00'
+AND rowtime < '2022-07-06T10:00:00'
+GROUP BY `customerId`;
+
+Create table for item and vote count, based on latest user vote, on certain time range
+CREATE TABLE `tbl-commodity-flashsale-vote-two-result`
+AS
+SELECT `itemName`, COUNT(`customerId`) AS `votesCount`
+FROM `tbl-commodity-flashsale-vote-user-item-timestamp`
+GROUP BY `itemName`
+EMIT CHANGES;
+
+Run Postman -> Microservices & Kafka Stream -> Flash Sale -> Create Random Flash Sale Vote
+
+3.Average rating
+
+Create table for average rating by country
+CREATE TABLE `tbl-commodity-feedback-rating-one`
+AS
+SELECT `location`, AVG(`rating`) as `averageRating`
+FROM `s-commodity-feedback`
+GROUP BY `location`
+EMIT CHANGES;
+
+Filter aggregated values
+SELECT `location`, AVG(`rating`) as `averageRating`
+FROM `s-commodity-feedback`
+GROUP BY `location`
+HAVING AVG(`rating`) <= 3.5
+EMIT CHANGES;
+
+4.Detailed rating (histogram)
+Create table for average rating and histogram
+CREATE TABLE `tbl-commodity-feedback-rating-two`
+AS
+SELECT `location`,
+AVG(`rating`) as `averageRating`,
+HISTOGRAM( CAST(`rating` AS VARCHAR) ) as `histogramRating`
+FROM `s-commodity-feedback`
+GROUP BY `location`
+EMIT CHANGES;
+
+Run Postman -> Microservices & Kafka Stream -> Feedback -> Create Random Feedback
+
+---
+
+ksqlDB - Inventory
+
+1.Summing records (see 1.Kafka stream - summing records)
+
+Create stream from underlying topic
+CREATE STREAM `s-commodity-inventory` (
+`item` VARCHAR,
+`location` VARCHAR,
+`quantity` INT,
+`transactionTime` VARCHAR,
+`type` VARCHAR
+) WITH (
+KAFKA_TOPIC = 't-commodity-inventory',
+VALUE_FORMAT = 'JSON'
+);
+
+CREATE STREAM `s-commodity-inventory-movement`
+AS
+SELECT `item`,
+CASE
+WHEN `type` = 'ADD' THEN `quantity`
+WHEN `type` = 'REMOVE' THEN (-1 * `quantity`)
+ELSE 0
+END AS `quantity`
+FROM `s-commodity-inventory`
+EMIT CHANGES;
+
+CREATE TABLE `tbl-commodity-inventory-total-two`
+AS
+SELECT `item`, SUM(`quantity`) AS `totalQuantity`
+FROM `s-commodity-inventory-movement`
+GROUP BY `item`
+EMIT CHANGES;
+
+Run Postman -> Microservices & Kafka Stream -> Inventory -> Sum Record Simulation
+
+2.Custom rowtime (4.Timestamp extractor)
+
+SELECT `item`,
+`location`,
+`quantity`,
+`type`,
+`transactionTime`,
+FORMAT_TIMESTAMP( FROM_UNIXTIME(rowtime), 'yyyy-MM-dd''T''HH:mm:ss') AS `defaultRowtime`
+FROM `s-commodity-inventory`
+EMIT CHANGES;
+
+CREATE STREAM `s-commodity-inventory-four`
+WITH (
+TIMESTAMP = '`transactionTime`',
+TIMESTAMP_FORMAT = 'yyyy-MM-dd''T''HH:mm:ss'
+)
+AS
+SELECT `item`,
+`location`,
+`quantity`,
+`transactionTime`,
+`type`
+FROM `s-commodity-inventory`
+EMIT CHANGES;
+
+SELECT `item`,
+`location`,
+`quantity`,
+`type`,
+`transactionTime`,
+FORMAT_TIMESTAMP( FROM_UNIXTIME(rowtime), 'yyyy-MM-dd''T''HH:mm:ss') AS `extractedTime`
+FROM `s-commodity-inventory-four`
+EMIT CHANGES;
+
+Run Postman -> Microservices & Kafka Stream -> Inventory -> Inventory - Add
+
+DESCRIBE `s-commodity-inventory-four` EXTENDED; -> note that the "Timestamp field" is associated with the "transactionTime" field
+DESCRIBE `s-commodity-inventory` EXTENDED; -> note that the "Timestamp field" is "not set - using <ROWTIME>"
+
+3.Tumbling time window (see 5.Tumbling Time Window)
+
+Create stream with custom timestamp and quantity movement
+CREATE STREAM `s-commodity-inventory-five-movement`
+WITH (
+TIMESTAMP = '`transactionTime`',
+TIMESTAMP_FORMAT = 'yyyy-MM-dd''T''HH:mm:ss'
+)
+AS
+SELECT `item`,
+CASE
+WHEN `type` = 'ADD' THEN `quantity`
+WHEN `type` = 'REMOVE' THEN (-1 * `quantity`)
+ELSE 0
+END AS `quantity`,
+`transactionTime`
+FROM `s-commodity-inventory`
+EMIT CHANGES;
+
+Tumbling window
+CREATE TABLE `tbl-commodity-inventory-total-five`
+AS
+SELECT FORMAT_TIMESTAMP( FROM_UNIXTIME(windowstart), 'yyyy-MM-dd''T''HH:mm:ss') AS `windowStartTime`,
+FORMAT_TIMESTAMP( FROM_UNIXTIME(windowend), 'yyyy-MM-dd''T''HH:mm:ss') AS `windowEndTime`,
+`item`, SUM(`quantity`) `totalQuantity`
+FROM `s-commodity-inventory-five-movement`
+WINDOW TUMBLING (SIZE 1 HOUR)
+GROUP BY `item`
+EMIT CHANGES;
+
+Notice the built-in windowstart and windowend variables 
+
+Run Postman -> Microservices & Kafka Stream -> Inventory -> Window Simulation
+
+4.Hopping time window (see 6.Hopping Time Window)
+
+Create stream with custom timestamp and quantity movement
+CREATE STREAM `s-commodity-inventory-six-movement`
+WITH (
+TIMESTAMP = '`transactionTime`',
+TIMESTAMP_FORMAT = 'yyyy-MM-dd''T''HH:mm:ss'
+)
+AS
+SELECT `item`,
+CASE
+WHEN `type` = 'ADD' THEN `quantity`
+WHEN `type` = 'REMOVE' THEN (-1 * `quantity`)
+ELSE 0
+END AS `quantity`,
+`transactionTime`
+FROM `s-commodity-inventory`
+EMIT CHANGES;
+
+Hopping window
+CREATE TABLE `tbl-commodity-inventory-total-six`
+AS
+SELECT FORMAT_TIMESTAMP( FROM_UNIXTIME(windowstart), 'yyyy-MM-dd''T''HH:mm:ss') AS `windowStartTime`,
+FORMAT_TIMESTAMP( FROM_UNIXTIME(windowend), 'yyyy-MM-dd''T''HH:mm:ss') AS `windowEndTime`,
+`item`, SUM(`quantity`) `totalQuantity`
+FROM `s-commodity-inventory-six-movement`
+WINDOW HOPPING (SIZE 1 HOUR, ADVANCE BY 20 MINUTES)
+GROUP BY `item`
+EMIT CHANGES;
+
+Run Postman -> Microservices & Kafka Stream -> Inventory -> Window Simulation
+
+---
+
+ksqlDB - Stream/Stream join (see Kafka stream/stream joining)
+
+1.Inner join
+
+Create stream online order
+CREATE STREAM `s-commodity-online-order` (
+`orderDateTime` VARCHAR,
+`onlineOrderNumber` VARCHAR KEY,
+`totalAmount` INT,
+`username` VARCHAR
+)
+WITH (
+TIMESTAMP = '`orderDateTime`',
+TIMESTAMP_FORMAT = 'yyyy-MM-dd''T''HH:mm:ss',
+KAFKA_TOPIC = 't-commodity-online-order',
+VALUE_FORMAT = 'JSON'
+);
+
+Create stream online payment
+CREATE STREAM `s-commodity-online-payment` (
+`paymentDateTime` VARCHAR,
+`onlineOrderNumber` VARCHAR KEY,
+`paymentMethod` VARCHAR,
+`paymentNumber` VARCHAR
+)
+WITH (
+TIMESTAMP = '`paymentDateTime`',
+TIMESTAMP_FORMAT = 'yyyy-MM-dd''T''HH:mm:ss',
+KAFKA_TOPIC = 't-commodity-online-payment',
+VALUE_FORMAT = 'JSON'
+);
+
+Inner join with no grace period
+CREATE STREAM `s-commodity-join-order-payment-one`
+AS
+SELECT `s-commodity-online-order`.`onlineOrderNumber` AS `onlineOrderNumber`,
+PARSE_TIMESTAMP(`s-commodity-online-order`.`orderDateTime`, 'yyyy-MM-dd''T''HH:mm:ss') AS `orderDateTime`,
+`s-commodity-online-order`.`totalAmount` AS `totalAmount`,
+`s-commodity-online-order`.`username` AS `username`,
+PARSE_TIMESTAMP(`s-commodity-online-payment`.`paymentDateTime`, 'yyyy-MM-dd''T''HH:mm:ss') AS `paymentDateTime`,
+`s-commodity-online-payment`.`paymentMethod` AS `paymentMethod`,
+`s-commodity-online-payment`.`paymentNumber` AS `paymentNumber`
+FROM `s-commodity-online-order`
+INNER JOIN `s-commodity-online-payment`
+WITHIN 1 HOUR GRACE PERIOD 0 MILLISECOND
+ON `s-commodity-online-order`.`onlineOrderNumber` = `s-commodity-online-payment`.`onlineOrderNumber`
+EMIT CHANGES;
+
+2.Left join
+
+CREATE STREAM `s-commodity-join-order-payment-two`
+AS
+SELECT `s-commodity-online-order`.`onlineOrderNumber` AS `onlineOrderNumber`,
+PARSE_TIMESTAMP(`s-commodity-online-order`.`orderDateTime`, 'yyyy-MM-dd''T''HH:mm:ss') AS `orderDateTime`,
+`s-commodity-online-order`.`totalAmount` AS `totalAmount`,
+`s-commodity-online-order`.`username` AS `username`,
+PARSE_TIMESTAMP(`s-commodity-online-payment`.`paymentDateTime`, 'yyyy-MM-dd''T''HH:mm:ss') AS `paymentDateTime`,
+`s-commodity-online-payment`.`paymentMethod` AS `paymentMethod`,
+`s-commodity-online-payment`.`paymentNumber` AS `paymentNumber`
+FROM `s-commodity-online-order`
+LEFT JOIN `s-commodity-online-payment`
+WITHIN 1 HOUR
+ON `s-commodity-online-order`.`onlineOrderNumber` = `s-commodity-online-payment`.`onlineOrderNumber`
+EMIT CHANGES;
+
+3.Outer join
+Full outer join
+CREATE STREAM `s-commodity-join-order-payment-three`
+AS
+SELECT ROWKEY as `syntheticKey`,
+`s-commodity-online-order`.`onlineOrderNumber` AS `onlineOrderNumber`,
+PARSE_TIMESTAMP(`s-commodity-online-order`.`orderDateTime`, 'yyyy-MM-dd''T''HH:mm:ss') AS `orderDateTime`,
+`s-commodity-online-order`.`totalAmount` AS `totalAmount`,
+`s-commodity-online-order`.`username` AS `username`,
+PARSE_TIMESTAMP(`s-commodity-online-payment`.`paymentDateTime`, 'yyyy-MM-dd''T''HH:mm:ss') AS `paymentDateTime`,
+`s-commodity-online-payment`.`paymentMethod` AS `paymentMethod`,
+`s-commodity-online-payment`.`paymentNumber` AS `paymentNumber`
+FROM `s-commodity-online-order`
+FULL JOIN `s-commodity-online-payment`
+WITHIN 1 HOUR
+ON `s-commodity-online-order`.`onlineOrderNumber` = `s-commodity-online-payment`.`onlineOrderNumber`
+EMIT CHANGES;
+
+
+Note: there is one auto-generated column (syntheticKey), which has the value of first non null key
+
+---
+
+ksqlDB - Table/Table join (Kafka table/table joining)
+
+1.Inner join
+Create stream from underlying topic (color)
+CREATE STREAM `s-commodity-web-vote-color` (
+`username` VARCHAR,
+`color` VARCHAR,
+`voteDateTime` VARCHAR
+) WITH (
+KAFKA_TOPIC = 't-commodity-web-vote-color',
+VALUE_FORMAT = 'JSON'
+);
+
+Create stream from underlying topic (layout)
+CREATE STREAM `s-commodity-web-vote-layout` (
+`username` VARCHAR,
+`layout` VARCHAR,
+`voteDateTime` VARCHAR
+) WITH (
+KAFKA_TOPIC = 't-commodity-web-vote-layout',
+VALUE_FORMAT = 'JSON'
+);
+
+Create table to know latest user vote (color)
+CREATE TABLE `tbl-commodity-web-vote-username-color`
+AS
+SELECT `username`, LATEST_BY_OFFSET(`color`) AS `color`
+FROM `s-commodity-web-vote-color`
+GROUP BY `username`;
+
+Create table to know latest user vote (layout)
+CREATE TABLE `tbl-commodity-web-vote-username-layout`
+AS
+SELECT `username`, LATEST_BY_OFFSET(`layout`) AS `layout`
+FROM `s-commodity-web-vote-layout`
+GROUP BY `username`;
+
+Create table for item and vote count, based on latest user vote (color only)
+CREATE TABLE `t-commodity-web-vote-one-result-color`
+AS
+SELECT `color`,
+COUNT(`tbl-commodity-web-vote-username-color`.`username`) AS `votesCount`
+FROM `tbl-commodity-web-vote-username-color`
+INNER JOIN `tbl-commodity-web-vote-username-layout`
+ON `tbl-commodity-web-vote-username-color`.`username` = `tbl-commodity-web-vote-username-layout`.`username`
+GROUP BY `color`
+EMIT CHANGES;
+
+Create table for item and vote count, based on latest user vote (layout only)
+CREATE TABLE `t-commodity-web-vote-one-result-layout`
+AS
+SELECT `layout`,
+COUNT(`tbl-commodity-web-vote-username-layout`.`username`) AS `votesCount`
+FROM `tbl-commodity-web-vote-username-color`
+INNER JOIN `tbl-commodity-web-vote-username-layout`
+ON `tbl-commodity-web-vote-username-color`.`username` = `tbl-commodity-web-vote-username-layout`.`username`
+GROUP BY `layout`
+EMIT CHANGES;
+
+Run Postman -> Microservices & Kafka Stream -> Web Design Vote -> Inner Join Simulation
+
+2.Left join
+
+Crate table for item and vote count, based on latest user vote (color only)
+CREATE TABLE `t-commodity-web-vote-two-result-color`
+AS
+SELECT `color`,
+COUNT(`tbl-commodity-web-vote-username-color`.`username`) AS `votesCount`
+FROM `tbl-commodity-web-vote-username-color`
+LEFT JOIN `tbl-commodity-web-vote-username-layout`
+ON `tbl-commodity-web-vote-username-color`.`username` = `tbl-commodity-web-vote-username-layout`.`username`
+GROUP BY `color`
+EMIT CHANGES;
+
+Create table for item and vote count, based on latest user vote (layout only)
+CREATE TABLE `t-commodity-web-vote-two-result-layout`
+AS
+SELECT `layout`,
+COUNT(`tbl-commodity-web-vote-username-layout`.`username`) AS `votesCount`
+FROM `tbl-commodity-web-vote-username-color`
+LEFT JOIN `tbl-commodity-web-vote-username-layout`
+ON `tbl-commodity-web-vote-username-color`.`username` = `tbl-commodity-web-vote-username-layout`.`username`
+GROUP BY `layout`
+EMIT CHANGES;
+
+Run Postman -> Microservices & Kafka Stream -> Web Design Vote -> Left Join Simulation
+
+3.Outer join
+
+Crate table for item and vote count, based on latest user vote (color only)
+CREATE TABLE `t-commodity-web-vote-three-result-color`
+AS
+SELECT `color`,
+COUNT(`tbl-commodity-web-vote-username-color`.`username`) AS `votesCount`
+FROM `tbl-commodity-web-vote-username-color`
+FULL JOIN `tbl-commodity-web-vote-username-layout`
+ON `tbl-commodity-web-vote-username-color`.`username` = `tbl-commodity-web-vote-username-layout`.`username`
+GROUP BY `color`
+EMIT CHANGES;
+
+Create table for item and vote count, based on latest user vote (layout only)
+CREATE TABLE `t-commodity-web-vote-three-result-layout`
+AS
+SELECT `layout`,
+COUNT(`tbl-commodity-web-vote-username-layout`.`username`) AS `votesCount`
+FROM `tbl-commodity-web-vote-username-color`
+FULL JOIN `tbl-commodity-web-vote-username-layout`
+ON `tbl-commodity-web-vote-username-color`.`username` = `tbl-commodity-web-vote-username-layout`.`username`
+GROUP BY `layout`
+EMIT CHANGES;
+
+Run Postman -> Microservices & Kafka Stream -> Web Design Vote -> Outer Join Simulation
+
+---
+
+ksqlDB - Stream/Table join (Kafka stream/table joining)
+
+1.Inner join
+
+Create stream from underlying topic (purchase)
+CREATE STREAM `s-commodity-premium-purchase` (
+`username` VARCHAR,
+`purchaseNumber` VARCHAR,
+`item` VARCHAR
+) WITH (
+KAFKA_TOPIC = 't-commodity-premium-purchase',
+VALUE_FORMAT = 'JSON'
+);
+
+Create stream from underlying topic (user)
+CREATE STREAM `s-commodity-premium-user` (
+`username` VARCHAR,
+`level` VARCHAR
+) WITH (
+KAFKA_TOPIC = 't-commodity-premium-user',
+VALUE_FORMAT = 'JSON'
+);
+
+Create table for latest user level
+CREATE TABLE `tbl-commodity-premium-user`
+AS
+SELECT `username`, LATEST_BY_OFFSET(`level`) AS `level`
+FROM `s-commodity-premium-user`
+GROUP BY `username`
+EMIT CHANGES;
+
+Join stream / table, filter only 'gold' and 'diamond' users
+CREATE STREAM `s-commodity-premium-offer-one`
+AS
+SELECT `s-commodity-premium-purchase`.`username` AS `username`,
+`level`, `purchaseNumber`
+FROM `s-commodity-premium-purchase`
+INNER JOIN `tbl-commodity-premium-user`
+ON `s-commodity-premium-purchase`.`username` = `tbl-commodity-premium-user`.`username`
+WHERE LCASE(`level`) IN ('gold', 'diamond')
+EMIT CHANGES;
+
+Run Postman -> Microservices & Kafka Stream -> Premium Purchase & User -> Premium Offer - Inner Join Stream / Table
+
+2.Left join
+
+Join stream / table, filter only 'gold' and 'diamond' users
+CREATE STREAM `s-commodity-premium-offer-two`
+AS
+SELECT `s-commodity-premium-purchase`.`username` AS `username`,
+`level`, `purchaseNumber`
+FROM `s-commodity-premium-purchase`
+LEFT JOIN `tbl-commodity-premium-user`
+ON `s-commodity-premium-purchase`.`username` = `tbl-commodity-premium-user`.`username`
+WHERE `level` IS NULL
+OR LCASE(`level`) IN ('gold', 'diamond')
+EMIT CHANGES;
+
+Run Postman -> Microservices & Kafka Stream -> Premium Purchase & User -> Premium Offer - Lef Join Stream / Table
+
+3.Co-partition
+
+When joining, the requirement is that both sides of join must be co-partitioned, which means left side and right side must have same partitions number
+
+Create stream from underlying topic (user)
+CREATE STREAM `s-commodity-subscription-user` (
+`username` VARCHAR KEY,
+`duration` VARCHAR
+) WITH (
+KAFKA_TOPIC = 't-commodity-subscription-user',
+VALUE_FORMAT = 'JSON'
+);
+
+Create stream from underlying topic (purchase)
+CREATE STREAM `s-commodity-subscription-purchase` (
+`username` VARCHAR KEY,
+`subscriptionNumber` VARCHAR
+) WITH (
+KAFKA_TOPIC = 't-commodity-subscription-purchase',
+VALUE_FORMAT = 'JSON'
+);
+
+Create table for latest user subscription
+CREATE TABLE `tbl-commodity-subscription-user`
+AS
+SELECT `username`, LATEST_BY_OFFSET(`duration`) AS `duration`
+FROM `s-commodity-subscription-user`
+GROUP BY `username`
+EMIT CHANGES;
+
+See partition number (5 on stream)
+DESCRIBE `s-commodity-subscription-purchase` EXTENDED;
+
+See partition number (2 on table)
+DESCRIBE `tbl-commodity-subscription-user` EXTENDED;
+
+join stream / table (different partition number, will fail)
+CREATE STREAM `s-commodity-subscription-offer-one`
+AS
+SELECT `s-commodity-subscription-purchase`.`username` AS `username`,
+`subscriptionNumber`,`duration`
+FROM `s-commodity-subscription-purchase`
+INNER JOIN `tbl-commodity-subscription-user`
+ON `s-commodity-subscription-purchase`.`username` = `tbl-commodity-subscription-user`.`username`
+EMIT CHANGES;
+
+Re-partition table for latest user duration (5 partitions)
+CREATE TABLE `tbl-commodity-subscription-user-repartition`
+WITH (
+PARTITIONS = 5
+)
+AS
+SELECT `username`, LATEST_BY_OFFSET(`duration`) AS `duration`
+FROM `s-commodity-subscription-user`
+GROUP BY `username`
+EMIT CHANGES;
+
+See partition number (5 on table)
+DESCRIBE `tbl-commodity-subscription-user-repartition` EXTENDED;
+
+Join stream / re-partitioned table (same partition number)
+CREATE STREAM `s-commodity-subscription-offer-two`
+AS
+SELECT `s-commodity-subscription-purchase`.`username` AS `username`,
+`subscriptionNumber`,`duration`
+FROM `s-commodity-subscription-purchase`
+INNER JOIN `tbl-commodity-subscription-user-repartition`
+ON `s-commodity-subscription-purchase`.`username` = `tbl-commodity-subscription-user-repartition`.`username`
+EMIT CHANGES;
+
+---
+
+ksqlDB - exactly once semantic - see https://docs.ksqldb.io/en/latest/operate-and-deploy/exactly-once-semantics/
+
+---
+
+ksqlDB - UDF, UDTF, UDAF
+
+1.UDF (User Defined Function)
+
+See LoanUdf
+
+copy ./target/kafka-ksqldb-udf-1.0.0-SNAPSHOT.jar to ./data/kafka-ksqldb-data/udfs
+
+Run: docker restart kafka-ksqldb
+
+Inside ksqldb terminal, run:
+
+Show functions
+SHOW FUNCTIONS;
+
+Describe function
+DESCRIBE FUNCTION LOAN_INSTALLMENT;
+
+Create new stream and new topic
+CREATE STREAM `s-commodity-loan-request` (
+`username` VARCHAR,
+`principalLoanAmount` DOUBLE,
+`annualInterestRate` DOUBLE,
+`loanPeriodMonth` INT
+) WITH (
+KAFKA_TOPIC = 't-commodity-loan-request',
+PARTITIONS = 2,
+VALUE_FORMAT = 'JSON'
+);
+
+insert data
+INSERT INTO `s-commodity-loan-request` (
+`username`,
+`principalLoanAmount`,
+`annualInterestRate`,
+`loanPeriodMonth`
+) VALUES (
+'danny',
+1000,
+12,
+12
+);
+
+INSERT INTO `s-commodity-loan-request` (
+`username`,
+`principalLoanAmount`,
+`annualInterestRate`,
+`loanPeriodMonth`
+) VALUES (
+'melvin',
+1500,
+10.5,
+24
+);
+
+INSERT INTO `s-commodity-loan-request` (
+`username`,
+`principalLoanAmount`,
+`annualInterestRate`,
+`loanPeriodMonth`
+) VALUES (
+'thomas',
+3500,
+11.2,
+36
+);
+
+Use the UDF
+SELECT `username`, `principalLoanAmount`, `annualInterestRate`, `loanPeriodMonth`,
+LOAN_INSTALLMENT(`principalLoanAmount`, `annualInterestRate`, `loanPeriodMonth`) AS `monthlyLoanInstallment`
+FROM `s-commodity-loan-request`
+EMIT CHANGES;
+
+2.UDTF (User Defined Tabular Function)
+
+An UDTF receives one input, and produces one or more outputs (similar with Kafka Stream flatMap); it can use STRUCT as well
+
+See LoanUdtf -> accepts a loanSubmission STRUCT as an input, and outputs a List of monthlyInstallment STRUCT 
+
+copy ./target/kafka-ksqldb-udf-1.0.0-SNAPSHOT.jar to ./data/kafka-ksqldb-data/udfs
+
+Run: docker restart kafka-ksqldb
+
+Create stream with struct
+CREATE STREAM `s-commodity-loan-submission` (
+`loanSubmission` STRUCT<
+`principalLoanAmount` DOUBLE,
+`annualInterestRate` DOUBLE,   
+`loanPeriodMonth` INT,   
+`loanApprovedDate` VARCHAR  
+>
+) WITH (
+KAFKA_TOPIC = 't-commodity-loan-submission',
+PARTITIONS = 2,
+VALUE_FORMAT = 'JSON'
+);
+
+Insert data
+INSERT INTO `s-commodity-loan-submission` (
+`loanSubmission`
+) VALUES (
+STRUCT(
+`principalLoanAmount` := 6000,
+`annualInterestRate` := 11.5,
+`loanPeriodMonth` := 24,
+`loanApprovedDate` := '2022-11-21'
+)
+);
+
+Run query
+SELECT LOAN_INSTALLMENT_SCHEDULE(`loanSubmission`)
+FROM `s-commodity-loan-submission`;
+
+3.UDAF (User Defined Aggregate Function)
+
+An UDAF is an aggregation function that consumes one row at a time, maintaining a stateful representation of historical data.
+https://docs.ksqldb.io/en/latest/how-to-guides/create-a-user-defined-function/
+
+See LoanUdaf
+
+copy ./target/kafka-ksqldb-udf-1.0.0-SNAPSHOT.jar to ./data/kafka-ksqldb-data/udfs
+
+Run: docker restart kafka-ksqldb
+
+Create stream for payment
+CREATE STREAM `s-commodity-loan-payment` (
+`loanNumber` VARCHAR,
+`installmentDueDate` VARCHAR,
+`installmentPaidDate` VARCHAR
+) WITH (
+KAFKA_TOPIC = 't-commodity-loan-payment',
+PARTITIONS = 2,
+VALUE_FORMAT = 'JSON'
+);
+
+Create stream with payment latency. Positive latency means late payment (bad).
+CREATE STREAM `s-commodity-loan-payment-latency`
+AS
+SELECT `loanNumber`,
+`installmentDueDate`,
+`installmentPaidDate`,
+UNIX_DATE(PARSE_DATE(`installmentPaidDate`, 'yyyy-MM-dd')) -
+UNIX_DATE(PARSE_DATE(`installmentDueDate`, 'yyyy-MM-dd')) AS `paymentLatency`
+FROM `s-commodity-loan-payment`;
+
+Insert data
+INSERT INTO `s-commodity-loan-payment` (
+`loanNumber`,
+`installmentDueDate`,
+`installmentPaidDate`
+) VALUES (
+'LOAN-111',
+'2023-04-17',
+'2023-04-15'
+);
+
+
+INSERT INTO `s-commodity-loan-payment` (
+`loanNumber`,
+`installmentDueDate`,
+`installmentPaidDate`
+) VALUES (
+'LOAN-111',
+'2023-05-17',
+'2023-05-05'
+);
+
+
+INSERT INTO `s-commodity-loan-payment` (
+`loanNumber`,
+`installmentDueDate`,
+`installmentPaidDate`
+) VALUES (
+'LOAN-111',
+'2023-06-17',
+'2023-06-09'
+);
+
+
+INSERT INTO `s-commodity-loan-payment` (
+`loanNumber`,
+`installmentDueDate`,
+`installmentPaidDate`
+) VALUES (
+'LOAN-111',
+'2023-07-17',
+'2023-07-17'
+);
+
+
+INSERT INTO `s-commodity-loan-payment` (
+`loanNumber`,
+`installmentDueDate`,
+`installmentPaidDate`
+) VALUES (
+'LOAN-111',
+'2023-08-17',
+'2023-08-15'
+);
+
+
+-- insert dummy data 2
+INSERT INTO `s-commodity-loan-payment` (
+`loanNumber`,
+`installmentDueDate`,
+`installmentPaidDate`
+) VALUES (
+'LOAN-222',
+'2023-04-14',
+'2023-04-15'
+);
+
+
+INSERT INTO `s-commodity-loan-payment` (
+`loanNumber`,
+`installmentDueDate`,
+`installmentPaidDate`
+) VALUES (
+'LOAN-222',
+'2023-05-14',
+'2023-05-05'
+);
+
+
+INSERT INTO `s-commodity-loan-payment` (
+`loanNumber`,
+`installmentDueDate`,
+`installmentPaidDate`
+) VALUES (
+'LOAN-222',
+'2023-06-14',
+'2023-06-19'
+);
+
+
+INSERT INTO `s-commodity-loan-payment` (
+`loanNumber`,
+`installmentDueDate`,
+`installmentPaidDate`
+) VALUES (
+'LOAN-222',
+'2023-07-14',
+'2023-07-22'
+);
+
+
+INSERT INTO `s-commodity-loan-payment` (
+`loanNumber`,
+`installmentDueDate`,
+`installmentPaidDate`
+) VALUES (
+'LOAN-222',
+'2023-08-14',
+'2023-08-15'
+);
+
+SELECT `loanNumber`, LOAN_RATING(`paymentLatency`) AS `loanRating`
+FROM `s-commodity-loan-payment-latency`
+GROUP BY `loanNumber`
+EMIT CHANGES;
+
+
 Credits to Udemy/Java Spring & Apache Kafka Bootcamp - Basic to Complete
